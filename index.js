@@ -11,7 +11,7 @@ app.get('/', (req, res) => {
 });
 
 // استبدل بالتوكن الخاص بك
-const token = process.env.TELEGRAM_BOT_TOKEN || 'YOUR_BOT_TOKEN';
+const token = process.env.TELEGRAM_BOT_TOKEN || '7203035834:AAEaT5eaKIKYnbD7jtlEijifCr7z7t1ZBL0';
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
@@ -68,7 +68,7 @@ bot.onText(/\/start/, (msg) => {
     const options = {
         reply_markup: {
             keyboard: [
-                ["🔍 البحث بالرقم", "📋 البحث المتقدم"],
+                ["🔍 البحث برقم الهوية", "🔍 البحث بالاسم"],
                 ["📖 معلومات عن البوت", "📞 معلومات الاتصال"],
             ],
             resize_keyboard: true, // جعل الأزرار أصغر حجمًا
@@ -83,25 +83,22 @@ bot.on('message', (msg) => {
     const chatId = msg.chat.id;
     const input = msg.text.trim();
 
-    if (input === "🔍 البحث بالرقم") {
+    if (input === "🔍 البحث برقم الهوية") {
         bot.sendMessage(chatId, "📝 أدخل رقم الهوية للبحث:");
-    } else if (input === "📋 البحث المتقدم") {
-        const options = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: "🔍 البحث حسب المحافظة", callback_data: 'search_by_province' }],
-                    [{ text: "🔍 البحث حسب المدينة", callback_data: 'search_by_city' }],
-                    [{ text: "🔍 البحث حسب الحالة", callback_data: 'search_by_status' }],
-                ],
-            },
-        };
-        bot.sendMessage(chatId, "🔍 اختر معيار البحث:", options);
+    } else if (input === "🔍 البحث بالاسم") {
+        bot.sendMessage(chatId, "📝 أدخل اسم المواطن للبحث:");
     } else if (input === "📖 معلومات عن البوت") {
         const aboutMessage = `
 🤖 **معلومات عن البوت:**
-هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو معايير أخرى.
+هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو الاسم.
 
-هدفنا هو تسهيل الوصول إلى البيانات.
+- يمكنك البحث باستخدام رقم الهوية أو الاسم.
+- يتم عرض تفاصيل المواطن بما في ذلك بيانات الموزع وحالة الطلب.
+
+هدفنا هو تسهيل الوصول إلى البيانات من خلال هذه الخدمة.
+هذه الخدمة ليست حكومية وإنما خدمة من جهد شخصي.
+
+🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
     } else if (input === "📞 معلومات الاتصال") {
@@ -111,32 +108,12 @@ bot.on('message', (msg) => {
 - 📱 جوال: [0598550144]
         `;
         bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
-    }
-});
+    } else {
+        // البحث برقم الهوية أو الاسم
+        const user = data.find((entry) => entry.idNumber === input || entry.name.includes(input));
 
-// التعامل مع البحث المتقدم
-bot.on('callback_query', (query) => {
-    const chatId = query.message.chat.id;
-
-    if (query.data === 'search_by_province') {
-        bot.sendMessage(chatId, "📝 أدخل اسم المحافظة للبحث:");
-    } else if (query.data === 'search_by_city') {
-        bot.sendMessage(chatId, "📝 أدخل اسم المدينة للبحث:");
-    } else if (query.data === 'search_by_status') {
-        bot.sendMessage(chatId, "📝 أدخل الحالة (مثال: مكتمل / قيد الانتظار) للبحث:");
-    }
-});
-
-// البحث باستخدام المعايير
-bot.on('message', (msg) => {
-    const chatId = msg.chat.id;
-    const input = msg.text.trim();
-
-    // البحث حسب الرقم أو اسم المواطن
-    const user = data.find((entry) => entry.idNumber === input || entry.name === input);
-
-    if (user) {
-        const response = `
+        if (user) {
+            const response = `
 🔍 **تفاصيل الطلب:**
 
 👤 **الاسم**: ${user.name}
@@ -150,10 +127,11 @@ bot.on('message', (msg) => {
 
 📜 **الحالة**: ${user.status}
 📅 **تاريخ الطلب**: ${user.orderDate}
-        `;
-        bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
-    } else {
-        bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات للمدخل المقدم.");
+            `;
+            bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
+        } else {
+            bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات للمدخل المقدم.");
+        }
     }
 });
 
