@@ -1,4 +1,6 @@
 const { Telegraf } = require('telegraf');
+const express = require('express');
+const app = express();
 
 // استبدل هذا بـ التوكن الخاص بك
 const bot = new Telegraf('7859625373:AAEFlMbm3Sfagj4S9rx5ixbfqItE1jNpDos');
@@ -25,7 +27,19 @@ bot.on('message', (ctx) => {
   }
 });
 
-// استخدام polling بدلاً من Webhook:
-bot.launch();
+// إعداد Webhook للبوت باستخدام Express
+const port = 3000; // البورت الذي ترغب في تشغيل الخادم عليه
+const url = 'https://yourdomain.com/webhook'; // استبدل هذا بالرابط الفعلي الذي يعمل عليه خادمك
+
+// إعداد Webhook
+bot.telegram.setWebhook(url);
+
+// إعداد تطبيق Express
+app.use(bot.webhookCallback('/webhook'));
+
+// بدء خادم Express على بورت معين
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 
 console.log("البوت يعمل الآن...");
