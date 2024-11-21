@@ -1,4 +1,3 @@
-
 const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
 require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
@@ -12,19 +11,13 @@ app.get('/', (req, res) => {
 });
 
 // استبدل بالتوكن الخاص بك
-const token = process.env.TELEGRAM_BOT_TOKEN || 'AAEaT5eaKIKYnbD7jtlEijifCr7z7t1ZBL0';
-
-// قائمة المعرفات الخاصة بالمشرفين
-const adminIds = process.env.ADMIN_IDS?.split(',') || ['7719756994', 'ADMIN_ID_2']; // ضع معرفات المسؤولين هنا
+const token = process.env.TELEGRAM_BOT_TOKEN || '7203035834:AAEaT5eaKIKYnbD7jtlEijifCr7z7t1ZBL0';
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
 
 // تخزين البيانات من Excel
 let data = [];
-
-// حالة الإرسال الجماعي
-let isBroadcastMode = false;
 
 // دالة لتحميل البيانات من Excel
 async function loadDataFromExcel() {
@@ -62,6 +55,9 @@ async function loadDataFromExcel() {
         });
 
         console.log('تم تحميل البيانات بنجاح.');
+
+        // إرسال تنبيه للمستخدمين بأن البيانات تم تحديثها
+        sendMessageToAdmins("📢 تم تحديث البيانات بنجاح! يمكنك الآن البحث في البيانات المحدثة.");
     } catch (error) {
         console.error('حدث خطأ أثناء قراءة ملف Excel:', error.message);
     }
@@ -70,61 +66,38 @@ async function loadDataFromExcel() {
 // تحميل البيانات عند بدء التشغيل
 loadDataFromExcel();
 
+// قائمة معرفات المسؤولين
+const adminIds = process.env.ADMIN_IDS?.split(',') || ['7719756994']; // إضافة المعرفات الفعلية للمسؤولين
+
 // الرد على أوامر البوت
 bot.onText(/\/start/, (msg) => {
-    const chatId = msg.chat.id;
-    const isAdmin = adminIds.includes(chatId.toString());
-
-    const keyboard = [
-        [{ text: "🔍 البحث برقم الهوية أو الاسم" }],
-        [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
-    ];
-
-    // إذا كان المستخدم مسؤولًا، أضف زر "إرسال للجميع"
-    if (isAdmin) {
-        keyboard.push([{ text: "📢 إرسال رسالة للجميع" }]);
-    }
-
     const options = {
         reply_markup: {
-            keyboard,
+            keyboard: [
+                [{ text: "🔍 البحث برقم الهوية أو الاسم" }],
+                [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
+            ],
             resize_keyboard: true, // ضبط الأزرار لتتناسب مع الحجم
             one_time_keyboard: false, // تجعل الأزرار مرئية دائمًا
         },
     };
 
-    bot.sendMessage(chatId, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
+    // إضافة الزر "إرسال رسالة للجميع" للمسؤولين فقط
+    if (adminIds.includes(msg.chat.id.toString())) {
+        options.reply_markup.keyboard.push([{ text: "📢 إرسال رسالة للجميع" }]);
+    }
+
+    bot.sendMessage(msg.chat.id, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
-// التعامل مع الضغط على الأزرار والرسائل
-bot.on('message', async (msg) => {
+// التعامل مع الضغط على الأزرار
+bot.on('message', (msg) => {
     const chatId = msg.chat.id;
-    const input = msg.text.trim();
-    const isAdmin = adminIds.includes(chatId.toString());
+    const input = msg.text.trim(); // مدخل المستخدم
 
-    // إذا كان المستخدم يطلب "إرسال رسالة للجميع"
-    if (input === "📢 إرسال رسالة للجميع") {
-        if (isAdmin) {
-            isBroadcastMode = true; // تفعيل وضع الإرسال الجماعي
-            bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
-        } else {
-            bot.sendMessage(chatId, "⚠️ هذا الخيار متاح فقط للمسؤولين.");
-        }
-        return;
-    }
+    if (input === '/start' || input.startsWith('/')) return; // تجاهل الأوامر الأخرى
 
-    // إذا كان في وضع الإرسال الجماعي
-    if (isBroadcastMode) {
-        if (isAdmin) {
-            const broadcastMessage = input; // حفظ الرسالة المدخلة
-            isBroadcastMode = false; // إلغاء وضع الإرسال الجماعي بعد استلام الرسالة
-            await sendMessageToAllUsers(broadcastMessage);
-            bot.sendMessage(chatId, "✅ تم إرسال الرسالة للجميع.");
-        }
-        return;
-    }
-
-    // البحث في البيانات إذا لم يكن في وضع الإرسال الجماعي
+    // التعامل مع الأزرار
     if (input === "🔍 البحث برقم الهوية أو الاسم") {
         bot.sendMessage(chatId, "📝 أدخل رقم الهوية أو الاسم للبحث:");
     } else if (input === "📞 معلومات الاتصال") {
@@ -140,14 +113,23 @@ bot.on('message', async (msg) => {
     } else if (input === "📖 معلومات عن البوت") {
         const aboutMessage = `
 🤖 **معلومات عن البوت:**
-هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو الاسم.
+هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو الاسم
 
 - يمكنك البحث باستخدام رقم الهوية أو الاسم.
 - يتم عرض تفاصيل المواطن بما في ذلك بيانات الموزع وحالة الطلب.
 
+هدفنا هو تسهيل الوصول إلى البيانات من خلال هذه الخدمة.
+هذه الخدمة ليست حكومية وانما خدمة من جهد شخصي
+
 🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
+    } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
+        bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
+        bot.once('message', (broadcastMsg) => {
+            const broadcastText = broadcastMsg.text;
+            sendBroadcastMessage(broadcastText, chatId);
+        });
     } else {
         const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
@@ -174,19 +156,22 @@ bot.on('message', async (msg) => {
     }
 });
 
-// دالة إرسال رسالة جماعية
-async function sendMessageToAllUsers(message) {
-    try {
-        const updates = await bot.getUpdates();
-        const uniqueChatIds = [...new Set(updates.map(update => update.message?.chat.id).filter(Boolean))];
-
-        for (const chatId of uniqueChatIds) {
-            await bot.sendMessage(chatId, message);
+// إرسال رسالة جماعية
+async function sendBroadcastMessage(message, adminChatId) {
+    const allUsers = await bot.getUpdates();
+    allUsers.forEach(update => {
+        if (update.message) {
+            bot.sendMessage(update.message.chat.id, message);
         }
-        console.log("✅ تم إرسال الرسالة للجميع.");
-    } catch (error) {
-        console.error("❌ حدث خطأ أثناء إرسال الرسائل:", error.message);
-    }
+    });
+    bot.sendMessage(adminChatId, "✅ تم إرسال الرسالة للجميع بنجاح.");
+}
+
+// إرسال تنبيه للمسؤولين
+function sendMessageToAdmins(message) {
+    adminIds.forEach(adminId => {
+        bot.sendMessage(adminId, message);
+    });
 }
 
 // تشغيل السيرفر
