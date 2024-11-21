@@ -11,13 +11,16 @@ app.get('/', (req, res) => {
 });
 
 // استبدل بالتوكن الخاص بك
-const token = process.env.TELEGRAM_BOT_TOKEN || '7203035834:AAEaT5eaKIKYnbD7jtlEijifCr7z7t1ZBL0';
+const token = process.env.TELEGRAM_BOT_TOKEN || 'AAEaT5eaKIKYnbD7jtlEijifCr7z7t1ZBL0';
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
 
 // تخزين البيانات من Excel
 let data = [];
+
+// حفظ معرفات المستخدمين الذين يتفاعلون مع البوت
+let userIds = new Set(); // Set للحفاظ على المعرفات الفريدة للمستخدمين
 
 // دالة لتحميل البيانات من Excel
 async function loadDataFromExcel() {
@@ -71,6 +74,10 @@ const adminIds = process.env.ADMIN_IDS?.split(',') || ['7719756994']; // إضا�
 
 // الرد على أوامر البوت
 bot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id;
+    // حفظ المعرفات للمستخدمين الجدد الذين يبدأون التفاعل
+    userIds.add(chatId);
+
     const options = {
         reply_markup: {
             keyboard: [
@@ -83,11 +90,11 @@ bot.onText(/\/start/, (msg) => {
     };
 
     // إضافة الزر "إرسال رسالة للجميع" للمسؤولين فقط
-    if (adminIds.includes(msg.chat.id.toString())) {
+    if (adminIds.includes(chatId.toString())) {
         options.reply_markup.keyboard.push([{ text: "📢 إرسال رسالة للجميع" }]);
     }
 
-    bot.sendMessage(msg.chat.id, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
+    bot.sendMessage(chatId, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
 // التعامل مع الضغط على الأزرار
@@ -158,11 +165,8 @@ bot.on('message', (msg) => {
 
 // إرسال رسالة جماعية
 async function sendBroadcastMessage(message, adminChatId) {
-    const allUsers = await bot.getUpdates();
-    allUsers.forEach(update => {
-        if (update.message) {
-            bot.sendMessage(update.message.chat.id, message);
-        }
+    userIds.forEach(userId => {
+        bot.sendMessage(userId, message);
     });
     bot.sendMessage(adminChatId, "✅ تم إرسال الرسالة للجميع بنجاح.");
 }
