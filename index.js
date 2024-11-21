@@ -1,11 +1,11 @@
 const TelegramBot = require('node-telegram-bot-api');
-const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
-require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
-const express = require('express'); // إضافة Express لتشغيل السيرفر
+const ExcelJS = require('exceljs'); 
+require('dotenv').config(); 
+const express = require('express'); 
 
-// إعداد سيرفر Express (لتشغيل التطبيق على Render أو في بيئة محلية)
+// إعداد سيرفر Express
 const app = express();
-const port = process.env.PORT || 4000; // المنفذ الافتراضي
+const port = process.env.PORT || 4000;
 app.get('/', (req, res) => {
     res.send('The server is running successfully.');
 });
@@ -23,20 +23,20 @@ let data = [];
 async function loadDataFromExcel() {
     try {
         const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.readFile('gas18-11-2024.xlsx'); // اسم الملف
-        const worksheet = workbook.worksheets[0]; // أول ورقة عمل
+        await workbook.xlsx.readFile('gas18-11-2024.xlsx'); 
+        const worksheet = workbook.worksheets[0]; 
 
-        worksheet.eachRow((row, rowNumber) => {
-            const idNumber = row.getCell(1).value?.toString().trim(); // رقم الهوية
-            const name = row.getCell(2).value?.toString().trim(); // اسم المواطن
-            const province = row.getCell(3).value?.toString().trim(); // المحافظة
-            const district = row.getCell(4).value?.toString().trim(); // المدينة
-            const area = row.getCell(5).value?.toString().trim(); // الحي/المنطقة
-            const distributorId = row.getCell(6).value?.toString().trim(); // هوية الموزع
-            const distributorName = row.getCell(7).value?.toString().trim(); // اسم الموزع
-            const distributorPhone = row.getCell(8).value?.toString().trim(); // رقم جوال الموزع
-            const status = row.getCell(9).value?.toString().trim(); // الحالة
-            const orderDate = row.getCell(12).value?.toString().trim(); // تاريخ الطلب
+        worksheet.eachRow((row) => {
+            const idNumber = row.getCell(1).value?.toString().trim(); 
+            const name = row.getCell(2).value?.toString().trim(); 
+            const province = row.getCell(3).value?.toString().trim(); 
+            const district = row.getCell(4).value?.toString().trim(); 
+            const area = row.getCell(5).value?.toString().trim(); 
+            const distributorId = row.getCell(6).value?.toString().trim(); 
+            const distributorName = row.getCell(7).value?.toString().trim(); 
+            const distributorPhone = row.getCell(8).value?.toString().trim(); 
+            const status = row.getCell(9).value?.toString().trim(); 
+            const orderDate = row.getCell(12).value?.toString().trim(); 
 
             if (idNumber && name) {
                 data.push({
@@ -54,66 +54,102 @@ async function loadDataFromExcel() {
             }
         });
 
-        console.log('تم تحميل البيانات بنجاح.');
+        console.log('✅ تم تحميل البيانات بنجاح.');
     } catch (error) {
-        console.error('حدث خطأ أثناء قراءة ملف Excel:', error.message);
+        console.error('❌ حدث خطأ أثناء قراءة ملف Excel:', error.message);
     }
 }
 
 // تحميل البيانات عند بدء التشغيل
 loadDataFromExcel();
 
-// الرد على أوامر البوت
+// الرد على /start
 bot.onText(/\/start/, (msg) => {
     const options = {
         reply_markup: {
-            keyboard: [
-                ["🔍 البحث برقم الهوية", "🔍 البحث بالاسم"],
-                ["📖 معلومات عن البوت", "📞 معلومات الاتصال"],
+            inline_keyboard: [
+                [{ text: "🔍 البحث برقم الهوية", callback_data: 'search_by_id' }],
+                [{ text: "🔍 البحث بالاسم", callback_data: 'search_by_name' }],
+                [{ text: "🔍 البحث بالاسم ورقم الهوية", callback_data: 'search_by_both' }],
+                [{ text: "🤖 معلومات عن البوت", callback_data: 'about' }],
+                [{ text: "📞 معلومات الاتصال", callback_data: 'contact' }]
             ],
-            resize_keyboard: true, // جعل الأزرار أصغر حجمًا
-            one_time_keyboard: false, // عدم إخفاء لوحة المفاتيح بعد اختيار زر
         },
     };
     bot.sendMessage(msg.chat.id, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
-// التعامل مع الأزرار السريعة
-bot.on('message', (msg) => {
-    const chatId = msg.chat.id;
-    const input = msg.text.trim();
+// التعامل مع الخيارات
+bot.on('callback_query', (query) => {
+    const chatId = query.message.chat.id;
 
-    if (input === "🔍 البحث برقم الهوية") {
-        bot.sendMessage(chatId, "📝 أدخل رقم الهوية للبحث:");
-    } else if (input === "🔍 البحث بالاسم") {
-        bot.sendMessage(chatId, "📝 أدخل اسم المواطن للبحث:");
-    } else if (input === "📖 معلومات عن البوت") {
+    if (query.data === 'search_by_id') {
+        bot.sendMessage(chatId, "📝 أدخل *رقم الهوية* للبحث:", { parse_mode: 'Markdown' });
+        bot.once('message', (msg) => {
+            const idNumber = msg.text.trim();
+            const user = data.find((entry) => entry.idNumber === idNumber);
+
+            if (user) {
+                const response = formatUserDetails(user);
+                bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
+            } else {
+                bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات برقم الهوية المدخل.");
+            }
+        });
+    } else if (query.data === 'search_by_name') {
+        bot.sendMessage(chatId, "📝 أدخل *الاسم الكامل* أو جزءًا منه للبحث:", { parse_mode: 'Markdown' });
+        bot.once('message', (msg) => {
+            const name = msg.text.trim();
+            const users = data.filter((entry) => entry.name.includes(name));
+
+            if (users.length > 0) {
+                users.forEach((user) => {
+                    const response = formatUserDetails(user);
+                    bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
+                });
+            } else {
+                bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات بالاسم المدخل.");
+            }
+        });
+    } else if (query.data === 'search_by_both') {
+        bot.sendMessage(chatId, "📝 أدخل *رقم الهوية* أو *الاسم* للبحث:", { parse_mode: 'Markdown' });
+        bot.once('message', (msg) => {
+            const input = msg.text.trim();
+            const user =
+                data.find((entry) => entry.idNumber === input) ||
+                data.find((entry) => entry.name.includes(input));
+
+            if (user) {
+                const response = formatUserDetails(user);
+                bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
+            } else {
+                bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات للمدخل المقدم.");
+            }
+        });
+    } else if (query.data === 'about') {
         const aboutMessage = `
 🤖 **معلومات عن البوت:**
-هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو الاسم.
+- يتيح لك البحث برقم الهوية أو الاسم أو كليهما.
+- يسهل عرض بيانات المواطنين والموزعين.
+- الخدمة مقدمة من جهد شخصي للمساعدة.
 
-- يمكنك البحث باستخدام رقم الهوية أو الاسم.
-- يتم عرض تفاصيل المواطن بما في ذلك بيانات الموزع وحالة الطلب.
-
-هدفنا هو تسهيل الوصول إلى البيانات من خلال هذه الخدمة.
-هذه الخدمة ليست حكومية وإنما خدمة من جهد شخصي.
-
-🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
+🔧 **المطور**: أحمد محمد أبو غرقود
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
-    } else if (input === "📞 معلومات الاتصال") {
+    } else if (query.data === 'contact') {
         const contactMessage = `
 📞 **معلومات الاتصال:**
 - 📧 البريد الإلكتروني: [mrahel1991@gmail.com]
-- 📱 جوال: [0598550144]
+- 📱 الجوال: 0598550144
+- 💬 تيليجرام: [https://t.me/AhmedGarqoud]
         `;
         bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
-    } else {
-        // البحث برقم الهوية أو الاسم
-        const user = data.find((entry) => entry.idNumber === input || entry.name.includes(input));
+    }
+});
 
-        if (user) {
-            const response = `
+// تنسيق بيانات المستخدم
+function formatUserDetails(user) {
+    return `
 🔍 **تفاصيل الطلب:**
 
 👤 **الاسم**: ${user.name}
@@ -127,15 +163,10 @@ bot.on('message', (msg) => {
 
 📜 **الحالة**: ${user.status}
 📅 **تاريخ الطلب**: ${user.orderDate}
-            `;
-            bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
-        } else {
-            bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات للمدخل المقدم.");
-        }
-    }
-});
+    `;
+}
 
 // تشغيل السيرفر
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`🚀 Server is running on port ${port}`);
 });
