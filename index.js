@@ -67,51 +67,22 @@ loadDataFromExcel();
 bot.onText(/\/start/, (msg) => {
     const options = {
         reply_markup: {
-            inline_keyboard: [
-                [{ text: "🔍 البحث برقم الهوية", callback_data: 'search_by_id' }],
-                [{ text: "🔍 البحث بالاسم", callback_data: 'search_by_name' }],
-                [{ text: "🔍 البحث بالاسم ورقم الهوية", callback_data: 'search_by_both' }],
-                [{ text: "🤖 معلومات عن البوت", callback_data: 'about' }],
-                [{ text: "📞 معلومات الاتصال", callback_data: 'contact' }]
+            keyboard: [
+                ["🔍 البحث برقم الهوية والاسم", "📞 معلومات الاتصال", "🤖 معلومات عن البوت"]
             ],
+            resize_keyboard: true,
+            one_time_keyboard: false,
         },
     };
     bot.sendMessage(msg.chat.id, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
-// التعامل مع الخيارات
-bot.on('callback_query', (query) => {
-    const chatId = query.message.chat.id;
+// التعامل مع الرسائل العامة
+bot.on('message', (msg) => {
+    const chatId = msg.chat.id;
+    const text = msg.text.trim();
 
-    if (query.data === 'search_by_id') {
-        bot.sendMessage(chatId, "📝 أدخل *رقم الهوية* للبحث:", { parse_mode: 'Markdown' });
-        bot.once('message', (msg) => {
-            const idNumber = msg.text.trim();
-            const user = data.find((entry) => entry.idNumber === idNumber);
-
-            if (user) {
-                const response = formatUserDetails(user);
-                bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
-            } else {
-                bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات برقم الهوية المدخل.");
-            }
-        });
-    } else if (query.data === 'search_by_name') {
-        bot.sendMessage(chatId, "📝 أدخل *الاسم الكامل* أو جزءًا منه للبحث:", { parse_mode: 'Markdown' });
-        bot.once('message', (msg) => {
-            const name = msg.text.trim();
-            const users = data.filter((entry) => entry.name.includes(name));
-
-            if (users.length > 0) {
-                users.forEach((user) => {
-                    const response = formatUserDetails(user);
-                    bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
-                });
-            } else {
-                bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات بالاسم المدخل.");
-            }
-        });
-    } else if (query.data === 'search_by_both') {
+    if (text === "🔍 البحث برقم الهوية والاسم") {
         bot.sendMessage(chatId, "📝 أدخل *رقم الهوية* أو *الاسم* للبحث:", { parse_mode: 'Markdown' });
         bot.once('message', (msg) => {
             const input = msg.text.trim();
@@ -126,17 +97,7 @@ bot.on('callback_query', (query) => {
                 bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات للمدخل المقدم.");
             }
         });
-    } else if (query.data === 'about') {
-        const aboutMessage = `
-🤖 **معلومات عن البوت:**
-- يتيح لك البحث برقم الهوية أو الاسم أو كليهما.
-- يسهل عرض بيانات المواطنين والموزعين.
-- الخدمة مقدمة من جهد شخصي للمساعدة.
-
-🔧 **المطور**: أحمد محمد أبو غرقود
-        `;
-        bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
-    } else if (query.data === 'contact') {
+    } else if (text === "📞 معلومات الاتصال") {
         const contactMessage = `
 📞 **معلومات الاتصال:**
 - 📧 البريد الإلكتروني: [mrahel1991@gmail.com]
@@ -144,6 +105,16 @@ bot.on('callback_query', (query) => {
 - 💬 تيليجرام: [https://t.me/AhmedGarqoud]
         `;
         bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
+    } else if (text === "🤖 معلومات عن البوت") {
+        const aboutMessage = `
+🤖 **معلومات عن البوت:**
+- يتيح لك البحث برقم الهوية أو الاسم معًا.
+- يسهل عرض بيانات المواطنين والموزعين.
+- الخدمة مقدمة من جهد شخصي للمساعدة.
+
+🔧 **المطور**: أحمد محمد أبو غرقود
+        `;
+        bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
     }
 });
 
