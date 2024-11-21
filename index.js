@@ -96,9 +96,10 @@ bot.on('message', (msg) => {
 🏙️ **المدينة**: ${user.district}
 🏘️ **الحي / المنطقة**: ${user.area}
 
-🆔 **هوية الموزع**: ${user.distributorId}  
 📛 **اسم الموزع**: ${user.distributorName}
 📞 **رقم جوال الموزع**: ${user.distributorPhone}
+🆔 **هوية الموزع**: ${user.distributorId}  
+
 
 📜 **الحالة**: ${user.status}
 📅 **تاريخ الطلب**: ${user.orderDate}
