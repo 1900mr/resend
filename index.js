@@ -1,7 +1,7 @@
 const { Telegraf } = require('telegraf');
 
 // استبدل هذا بـ التوكن الخاص بك
-const bot = new Telegraf('YOUR_BOT_TOKEN');
+const bot = new Telegraf('7859625373:AAEFlMbm3Sfagj4S9rx5ixbfqItE1jNpDos');
 
 // معرفات المجموعات
 let sourceGroupId = null;
