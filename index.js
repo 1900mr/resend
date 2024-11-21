@@ -16,7 +16,7 @@ const token = process.env.TELEGRAM_BOT_TOKEN || '7203035834:AAEaT5eaKIKYnbD7jtlE
 const bot = new TelegramBot(token, { polling: true });
 
 // تحديد معرف مدير البوت (لإرسال الرسائل الجماعية)
-const ADMIN_ID = process.env.ADMIN_ID || 'PUT_ADMIN_CHAT_ID_HERE';
+const ADMIN_ID = process.env.ADMIN_ID || '7719756994';
 
 // تخزين بيانات Excel
 let data = [];
