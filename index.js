@@ -1,11 +1,11 @@
 const TelegramBot = require('node-telegram-bot-api');
-const ExcelJS = require('exceljs');
-require('dotenv').config();
-const express = require('express');
+const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
+require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
+const express = require('express'); // إضافة Express لتشغيل السيرفر
 
-// إعداد سيرفر Express
+// إعداد سيرفر Express (لتشغيل التطبيق على Render أو في بيئة محلية)
 const app = express();
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 4000; // المنفذ الافتراضي
 app.get('/', (req, res) => {
     res.send('The server is running successfully.');
 });
@@ -23,20 +23,20 @@ let data = [];
 async function loadDataFromExcel() {
     try {
         const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.readFile('gas18-11-2024.xlsx');
-        const worksheet = workbook.worksheets[0];
+        await workbook.xlsx.readFile('gas18-11-2024.xlsx'); // اسم الملف
+        const worksheet = workbook.worksheets[0]; // أول ورقة عمل
 
         worksheet.eachRow((row, rowNumber) => {
-            const idNumber = row.getCell(1).value?.toString().trim();
-            const name = row.getCell(2).value?.toString().trim();
-            const province = row.getCell(3).value?.toString().trim();
-            const district = row.getCell(4).value?.toString().trim();
-            const area = row.getCell(5).value?.toString().trim();
-            const distributorId = row.getCell(6).value?.toString().trim();
-            const distributorName = row.getCell(7).value?.toString().trim();
-            const distributorPhone = row.getCell(8).value?.toString().trim();
-            const status = row.getCell(9).value?.toString().trim();
-            const orderDate = row.getCell(12).value?.toString().trim();
+            const idNumber = row.getCell(1).value?.toString().trim(); // رقم الهوية
+            const name = row.getCell(2).value?.toString().trim(); // اسم المواطن
+            const province = row.getCell(3).value?.toString().trim(); // المحافظة
+            const district = row.getCell(4).value?.toString().trim(); // المدينة
+            const area = row.getCell(5).value?.toString().trim(); // الحي/المنطقة
+            const distributorId = row.getCell(6).value?.toString().trim(); // هوية الموزع
+            const distributorName = row.getCell(7).value?.toString().trim(); // اسم الموزع
+            const distributorPhone = row.getCell(8).value?.toString().trim(); // رقم جوال الموزع
+            const status = row.getCell(9).value?.toString().trim(); // الحالة
+            const orderDate = row.getCell(12).value?.toString().trim(); // تاريخ الطلب
 
             if (idNumber && name) {
                 data.push({
@@ -55,6 +55,9 @@ async function loadDataFromExcel() {
         });
 
         console.log('تم تحميل البيانات بنجاح.');
+        
+        // إرسال تنبيه للمستخدمين بأن البيانات تم تحديثها
+        bot.sendMessageToAllUsers("📢 تم تحديث البيانات بنجاح! يمكنك الآن البحث في البيانات المحدثة.");
     } catch (error) {
         console.error('حدث خطأ أثناء قراءة ملف Excel:', error.message);
     }
@@ -78,26 +81,40 @@ bot.onText(/\/start/, (msg) => {
     bot.sendMessage(msg.chat.id, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
-let waitingForInput = false;
-
-// الرد على الضغط على الزر "🔍 البحث برقم الهوية أو الاسم"
-bot.onText(/🔍 البحث برقم الهوية أو الاسم/, (msg) => {
-    const chatId = msg.chat.id;
-    
-    // تغيير حالة انتظار المدخل
-    waitingForInput = true;
-
-    bot.sendMessage(chatId, '⚡️ من فضلك، أرسل لي رقم الهوية أو الاسم للبحث عن تفاصيل الطلب.');
-});
-
-// الرد على الرسائل
+// التعامل مع الضغط على الأزرار
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
-    const input = msg.text.trim();
+    const input = msg.text.trim(); // مدخل المستخدم
 
-    // التحقق مما إذا كان البوت في حالة انتظار إدخال رقم الهوية أو الاسم
-    if (waitingForInput) {
-        // البحث في البيانات باستخدام الاسم أو رقم الهوية
+    if (input === '/start' || input.startsWith('/')) return; // تجاهل الأوامر الأخرى
+
+    if (input === "🔍 البحث برقم الهوية أو الاسم") {
+        bot.sendMessage(chatId, "📝 أدخل رقم الهوية أو الاسم للبحث:");
+    } else if (input === "📞 معلومات الاتصال") {
+        const contactMessage = `
+📞 **معلومات الاتصال:**
+للمزيد من الدعم أو الاستفسار، يمكنك التواصل معنا عبر:
+
+- 📧 البريد الإلكتروني: [mrahel1991@gmail.com]
+- 📱 جوال : [0598550144]
+- 💬 تلغرام : [https://t.me/AhmedGarqoud]
+        `;
+        bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
+    } else if (input === "📖 معلومات عن البوت") {
+        const aboutMessage = `
+🤖 **معلومات عن البوت:**
+هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو الاسم
+
+- يمكنك البحث باستخدام رقم الهوية أو الاسم.
+- يتم عرض تفاصيل المواطن بما في ذلك بيانات الموزع وحالة الطلب.
+
+هدفنا هو تسهيل الوصول إلى البيانات من خلال هذه الخدمة.
+هذه الخدمة ليست حكومية وانما خدمة من جهد شخصي
+
+🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
+        `;
+        bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
+    } else {
         const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
         if (user) {
@@ -109,9 +126,9 @@ bot.on('message', (msg) => {
 🏙️ **المدينة**: ${user.district}
 🏘️ **الحي / المنطقة**: ${user.area}
 
+🆔 **هوية الموزع**: ${user.distributorId}  
 📛 **اسم الموزع**: ${user.distributorName}
 📞 **رقم جوال الموزع**: ${user.distributorPhone}
-🆔 **هوية الموزع**: ${user.distributorId}  
 
 📜 **الحالة**: ${user.status}
 📅 **تاريخ الطلب**: ${user.orderDate}
@@ -120,51 +137,20 @@ bot.on('message', (msg) => {
         } else {
             bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات للمدخل المقدم.");
         }
-
-        // إعادة تعيين الحالة
-        waitingForInput = false;
-    } else if (input === '/start' || input.startsWith('/')) {
-        // إذا كان المستخدم قد بدأ التفاعل مع البوت
-        return;
-    } else {
-        // إذا كانت الرسالة لا تتعلق بالبحث
-        bot.sendMessage(chatId, "⚠️ من فضلك، اختر أحد الأوامر أو اضغط على الزر المناسب.");
     }
 });
 
-// الرد على زر "📞 معلومات الاتصال"
-bot.onText(/📞 معلومات الاتصال/, (msg) => {
-    const chatId = msg.chat.id;
-    const response = `
-📞 **معلومات الاتصال:**
-للمزيد من الدعم أو الاستفسار، يمكنك التواصل معنا عبر:
-
-- 📧 البريد الإلكتروني: [mrahel1991@gmail.com]
-- 📱 جوال : [0598550144]
-- 💬 تلغرام : [https://t.me/AhmedGarqoud]
-
-نحن هنا للمساعدة!
-    `;
-    bot.sendMessage(chatId, response);
-});
-
-// الرد على زر "📖 معلومات عن البوت"
-bot.onText(/📖 معلومات عن البوت/, (msg) => {
-    const chatId = msg.chat.id;
-    const response = `
- 🤖 **معلومات عن البوت:**
-هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو الاسم
-
-- يمكنك البحث باستخدام رقم الهوية أو الاسم.
-- يتم عرض تفاصيل المواطن بما في ذلك بيانات الموزع وحالة الطلب.
-
-هدفنا هو تسهيل الوصول إلى البيانات من خلال هذه الخدمة.
-هذه الخدمة ليست حكومية وانما خدمة من جهد شخصي
-
-🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
-    `;
-    bot.sendMessage(chatId, response);
-});
+// إرسال تنبيه عند تحديث البيانات
+bot.sendMessageToAllUsers = function(message) {
+    // إرسال التنبيه إلى جميع المستخدمين الذين يتفاعلون مع البوت
+    bot.getUpdates().then(updates => {
+        updates.forEach(update => {
+            if (update.message) {
+                bot.sendMessage(update.message.chat.id, message);
+            }
+        });
+    });
+}
 
 // تشغيل السيرفر
 app.listen(port, () => {
