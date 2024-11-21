@@ -1,8 +1,8 @@
 const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs');
-const fs = require('fs'); // مكتبة مراقبة التحديثات في الملفات
 require('dotenv').config();
 const express = require('express');
+const fs = require('fs');
 
 // إعداد سيرفر Express
 const app = express();
@@ -19,6 +19,7 @@ const bot = new TelegramBot(token, { polling: true });
 
 // تخزين البيانات من Excel
 let data = [];
+let userIds = []; // لتخزين معرفات المستخدمين
 
 // دالة لتحميل البيانات من Excel
 async function loadDataFromExcel() {
@@ -56,23 +57,24 @@ async function loadDataFromExcel() {
         });
 
         console.log('تم تحميل البيانات بنجاح.');
-        // إرسال رسالة عندما يتم تحميل الكشف الجديد
-        bot.sendMessage(process.env.TELEGRAM_GROUP_ID, "📜 كشف جديد لتعبئة الغاز وصل! يرجى التحقق من البيانات.");
     } catch (error) {
         console.error('حدث خطأ أثناء قراءة ملف Excel:', error.message);
     }
 }
 
-// مراقبة التحديثات في الملف
-fs.watch('gas18-11-2024.xlsx', (eventType, filename) => {
-    if (eventType === 'change') {
-        console.log('تم تحديث الملف، تحميل البيانات الجديدة...');
-        loadDataFromExcel(); // تحميل البيانات الجديدة عند التحديث
-    }
-});
-
 // تحميل البيانات عند بدء التشغيل
 loadDataFromExcel();
+
+// مراقبة التحديثات على ملف Excel
+fs.watch('gas18-11-2024.xlsx', (eventType, filename) => {
+    if (eventType === 'change') {
+        console.log('تم تحديث ملف Excel');
+        // إرسال رسالة لجميع المستخدمين عند التحديث
+        userIds.forEach(userId => {
+            bot.sendMessage(userId, '📣 تم تحديث بيانات كشف تعبئة الغاز. يُمكنك الآن البحث باستخدام البيانات الجديدة.');
+        });
+    }
+});
 
 // الرد على أوامر البوت
 bot.onText(/\/start/, (msg) => {
@@ -82,11 +84,16 @@ bot.onText(/\/start/, (msg) => {
                 [{ text: "🔍 البحث برقم الهوية أو الاسم" }],
                 [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
             ],
-            resize_keyboard: true, // ضبط الأزرار لتتناسب مع الحجم
-            one_time_keyboard: false, // تجعل الأزرار مرئية دائمًا
+            resize_keyboard: true,
+            one_time_keyboard: false,
         },
     };
     bot.sendMessage(msg.chat.id, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
+
+    // تخزين معرف المستخدم عند التفاعل لأول مرة
+    if (!userIds.includes(msg.chat.id)) {
+        userIds.push(msg.chat.id);
+    }
 });
 
 bot.on('message', (msg) => {
@@ -103,13 +110,14 @@ bot.on('message', (msg) => {
 🔍 **تفاصيل الطلب:**
 
 👤 **الاسم**: ${user.name}
-🏘️ **الحي / المنطقة**: ${user.area}
-🏙️ **المدينة**: ${user.district}
 📍 **المحافظة**: ${user.province}
+🏙️ **المدينة**: ${user.district}
+🏘️ **الحي / المنطقة**: ${user.area}
 
 📛 **اسم الموزع**: ${user.distributorName}
 📞 **رقم جوال الموزع**: ${user.distributorPhone}
-🆔 **هوية الموزع**: ${user.distributorId}
+🆔 **هوية الموزع**: ${user.distributorId}  
+
 
 📜 **الحالة**: ${user.status}
 📅 **تاريخ الطلب**: ${user.orderDate}
