@@ -1,17 +1,17 @@
 const TelegramBot = require('node-telegram-bot-api');
-const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
-require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
-const express = require('express'); // إضافة Express لتشغيل السيرفر
+const ExcelJS = require('exceljs');
+require('dotenv').config();
+const express = require('express');
 
 // إعداد سيرفر Express
 const app = express();
-const port = process.env.PORT || 4000; // المنفذ الافتراضي
+const port = process.env.PORT || 4000;
 app.get('/', (req, res) => {
     res.send('The server is running successfully.');
 });
 
 // استبدل بالتوكن الخاص بك
-const token = process.env.TELEGRAM_BOT_TOKEN || 'YOUR_TELEGRAM_BOT_TOKEN';
+const token = process.env.TELEGRAM_BOT_TOKEN || '7203035834:AAEaT5eaKIKYnbD7jtlEijifCr7z7t1ZBL0';
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
@@ -23,20 +23,20 @@ let data = [];
 async function loadDataFromExcel() {
     try {
         const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.readFile('gas18-11-2024.xlsx'); // اسم الملف
-        const worksheet = workbook.worksheets[0]; // أول ورقة عمل
+        await workbook.xlsx.readFile('gas18-11-2024.xlsx');
+        const worksheet = workbook.worksheets[0];
 
         worksheet.eachRow((row, rowNumber) => {
-            const idNumber = row.getCell(1).value?.toString().trim(); // رقم الهوية
-            const name = row.getCell(2).value?.toString().trim(); // اسم المواطن
-            const province = row.getCell(3).value?.toString().trim(); // المحافظة
-            const district = row.getCell(4).value?.toString().trim(); // المدينة
-            const area = row.getCell(5).value?.toString().trim(); // الحي/المنطقة
-            const distributorId = row.getCell(6).value?.toString().trim(); // هوية الموزع
-            const distributorName = row.getCell(7).value?.toString().trim(); // اسم الموزع
-            const distributorPhone = row.getCell(8).value?.toString().trim(); // رقم جوال الموزع
-            const status = row.getCell(9).value?.toString().trim(); // الحالة
-            const orderDate = row.getCell(12).value?.toString().trim(); // تاريخ الطلب
+            const idNumber = row.getCell(1).value?.toString().trim();
+            const name = row.getCell(2).value?.toString().trim();
+            const province = row.getCell(3).value?.toString().trim();
+            const district = row.getCell(4).value?.toString().trim();
+            const area = row.getCell(5).value?.toString().trim();
+            const distributorId = row.getCell(6).value?.toString().trim();
+            const distributorName = row.getCell(7).value?.toString().trim();
+            const distributorPhone = row.getCell(8).value?.toString().trim();
+            const status = row.getCell(9).value?.toString().trim();
+            const orderDate = row.getCell(12).value?.toString().trim();
 
             if (idNumber && name) {
                 data.push({
@@ -63,18 +63,29 @@ async function loadDataFromExcel() {
 // تحميل البيانات عند بدء التشغيل
 loadDataFromExcel();
 
-// الرد على أي رسالة كبحث تلقائي
+// الرد على أوامر البوت
+bot.onText(/\/start/, (msg) => {
+    const options = {
+        reply_markup: {
+            keyboard: [
+                [{ text: "🔍 البحث برقم الهوية أو الاسم" }],
+                [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
+            ],
+            resize_keyboard: true, // ضبط الأزرار لتتناسب مع الحجم
+            one_time_keyboard: false, // تجعل الأزرار مرئية دائمًا
+        },
+    };
+    bot.sendMessage(msg.chat.id, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
+});
+
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
-    const input = msg.text.trim(); // مدخل المستخدم
+    const input = msg.text.trim();
 
-    if (input === '/start' || input.startsWith('/')) return; // تجاهل الأوامر الأخرى
+    if (input === '/start' || input.startsWith('/')) return;
 
-    const user = data.find(
-        (entry) =>
-            entry.idNumber === input || // تطابق مع رقم الهوية
-            entry.name.includes(input) // تطابق جزئي مع الاسم
-    );
+    // البحث في البيانات باستخدام الاسم أو رقم الهوية
+    const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
     if (user) {
         const response = `
@@ -96,21 +107,6 @@ bot.on('message', (msg) => {
     } else {
         bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات للمدخل المقدم.");
     }
-});
-
-// الرد على /start برسالة وترتيب الأزرار
-bot.onText(/\/start/, (msg) => {
-    const options = {
-        reply_markup: {
-            keyboard: [
-                [{ text: "🔍 البحث برقم الهوية والاسم" }],
-                [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
-            ],
-            resize_keyboard: true, // لضبط حجم الأزرار بحيث تكون ملائمة للمستخدم
-            one_time_keyboard: false, // الأزرار ستظل ظاهرة حتى يتم الضغط عليها
-        },
-    };
-    bot.sendMessage(msg.chat.id, "مرحبًا بك! استخدم الأزرار أدناه للخيارات المتاحة:", options);
 });
 
 // تشغيل السيرفر
