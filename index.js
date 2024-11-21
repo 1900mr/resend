@@ -1,42 +1,44 @@
+// استيراد المكتبات
 const TelegramBot = require('node-telegram-bot-api');
-const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
-require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
-const express = require('express'); // إضافة Express لتشغيل السيرفر
+const ExcelJS = require('exceljs'); // مكتبة Excel
+require('dotenv').config(); // متغيرات بيئية
+const express = require('express'); // لتشغيل السيرفر
 
-// إعداد سيرفر Express (لتشغيل التطبيق على Render أو في بيئة محلية)
+// إعداد سيرفر Express
 const app = express();
-const port = process.env.PORT || 4000; // المنفذ الافتراضي
+const port = process.env.PORT || 4000; // منفذ السيرفر
 app.get('/', (req, res) => {
     res.send('The server is running successfully.');
 });
 
-// استبدل بالتوكن الخاص بك
+// إعداد التوكن
 const token = process.env.TELEGRAM_BOT_TOKEN || '7203035834:AAEaT5eaKIKYnbD7jtlEijifCr7z7t1ZBL0';
-
-// إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
 
-// تخزين البيانات من Excel
+// تحديد معرف مدير البوت (لإرسال الرسائل الجماعية)
+const ADMIN_ID = process.env.ADMIN_ID || 'PUT_ADMIN_CHAT_ID_HERE';
+
+// تخزين بيانات Excel
 let data = [];
 
-// دالة لتحميل البيانات من Excel
+// تحميل البيانات من Excel
 async function loadDataFromExcel() {
     try {
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.readFile('gas18-11-2024.xlsx'); // اسم الملف
-        const worksheet = workbook.worksheets[0]; // أول ورقة عمل
+        const worksheet = workbook.worksheets[0];
 
         worksheet.eachRow((row, rowNumber) => {
-            const idNumber = row.getCell(1).value?.toString().trim(); // رقم الهوية
-            const name = row.getCell(2).value?.toString().trim(); // اسم المواطن
-            const province = row.getCell(3).value?.toString().trim(); // المحافظة
-            const district = row.getCell(4).value?.toString().trim(); // المدينة
-            const area = row.getCell(5).value?.toString().trim(); // الحي/المنطقة
-            const distributorId = row.getCell(6).value?.toString().trim(); // هوية الموزع
-            const distributorName = row.getCell(7).value?.toString().trim(); // اسم الموزع
-            const distributorPhone = row.getCell(8).value?.toString().trim(); // رقم جوال الموزع
-            const status = row.getCell(9).value?.toString().trim(); // الحالة
-            const orderDate = row.getCell(12).value?.toString().trim(); // تاريخ الطلب
+            const idNumber = row.getCell(1).value?.toString().trim();
+            const name = row.getCell(2).value?.toString().trim();
+            const province = row.getCell(3).value?.toString().trim();
+            const district = row.getCell(4).value?.toString().trim();
+            const area = row.getCell(5).value?.toString().trim();
+            const distributorId = row.getCell(6).value?.toString().trim();
+            const distributorName = row.getCell(7).value?.toString().trim();
+            const distributorPhone = row.getCell(8).value?.toString().trim();
+            const status = row.getCell(9).value?.toString().trim();
+            const orderDate = row.getCell(12).value?.toString().trim();
 
             if (idNumber && name) {
                 data.push({
@@ -54,47 +56,42 @@ async function loadDataFromExcel() {
             }
         });
 
-        console.log('تم تحميل البيانات بنجاح.');
-        
-        // إرسال تنبيه للمستخدمين بأن البيانات تم تحديثها
-        bot.sendMessageToAllUsers("📢 تم تحديث البيانات بنجاح! يمكنك الآن البحث في البيانات المحدثة.");
+        console.log('✅ تم تحميل البيانات بنجاح.');
     } catch (error) {
-        console.error('حدث خطأ أثناء قراءة ملف Excel:', error.message);
+        console.error('❌ حدث خطأ أثناء قراءة ملف Excel:', error.message);
     }
 }
 
 // تحميل البيانات عند بدء التشغيل
 loadDataFromExcel();
 
-// الرد على أوامر البوت
+// إعداد لوحة المفاتيح الرئيسية
+const mainMenu = {
+    reply_markup: {
+        keyboard: [
+            [{ text: "🔍 البحث برقم الهوية أو الاسم" }],
+            [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
+            [{ text: "📢 إرسال رسالة للجميع" }] // الزر الرابع
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: false,
+    },
+};
+
+// التعامل مع أوامر البوت
 bot.onText(/\/start/, (msg) => {
-    const options = {
-        reply_markup: {
-            keyboard: [
-                [{ text: "🔍 البحث برقم الهوية أو الاسم" }],
-                [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
-            ],
-            resize_keyboard: true, // ضبط الأزرار لتتناسب مع الحجم
-            one_time_keyboard: false, // تجعل الأزرار مرئية دائمًا
-        },
-    };
-    bot.sendMessage(msg.chat.id, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
+    bot.sendMessage(msg.chat.id, "مرحبًا بك! اختر أحد الخيارات التالية:", mainMenu);
 });
 
-// التعامل مع الضغط على الأزرار
-bot.on('message', (msg) => {
+bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
-    const input = msg.text.trim(); // مدخل المستخدم
-
-    if (input === '/start' || input.startsWith('/')) return; // تجاهل الأوامر الأخرى
+    const input = msg.text.trim();
 
     if (input === "🔍 البحث برقم الهوية أو الاسم") {
         bot.sendMessage(chatId, "📝 أدخل رقم الهوية أو الاسم للبحث:");
     } else if (input === "📞 معلومات الاتصال") {
         const contactMessage = `
 📞 **معلومات الاتصال:**
-للمزيد من الدعم أو الاستفسار، يمكنك التواصل معنا عبر:
-
 - 📧 البريد الإلكتروني: [mrahel1991@gmail.com]
 - 📱 جوال : [0598550144]
 - 💬 تلغرام : [https://t.me/AhmedGarqoud]
@@ -103,18 +100,26 @@ bot.on('message', (msg) => {
     } else if (input === "📖 معلومات عن البوت") {
         const aboutMessage = `
 🤖 **معلومات عن البوت:**
-هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو الاسم
+- يتيح البوت البحث عن المواطنين باستخدام رقم الهوية أو الاسم.
+- يعرض تفاصيل المواطن وبيانات الموزع وحالة الطلب.
+- هذا البوت هو خدمة شخصية وغير حكومية.
 
-- يمكنك البحث باستخدام رقم الهوية أو الاسم.
-- يتم عرض تفاصيل المواطن بما في ذلك بيانات الموزع وحالة الطلب.
-
-هدفنا هو تسهيل الوصول إلى البيانات من خلال هذه الخدمة.
-هذه الخدمة ليست حكومية وانما خدمة من جهد شخصي
-
-🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
+🔧 **التطوير**: أحمد محمد أبو غرقود
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
+    } else if (input === "📢 إرسال رسالة للجميع") {
+        if (chatId.toString() === ADMIN_ID) {
+            bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
+            bot.once('message', async (msg) => {
+                const broadcastMessage = msg.text.trim();
+                await sendMessageToAllUsers(broadcastMessage);
+                bot.sendMessage(chatId, "✅ تم إرسال الرسالة للجميع.");
+            });
+        } else {
+            bot.sendMessage(chatId, "⚠️ هذا الخيار متاح فقط لمدير البوت.");
+        }
     } else {
+        // البحث في البيانات
         const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
         if (user) {
@@ -140,16 +145,19 @@ bot.on('message', (msg) => {
     }
 });
 
-// إرسال تنبيه عند تحديث البيانات
-bot.sendMessageToAllUsers = function(message) {
-    // إرسال التنبيه إلى جميع المستخدمين الذين يتفاعلون مع البوت
-    bot.getUpdates().then(updates => {
-        updates.forEach(update => {
-            if (update.message) {
-                bot.sendMessage(update.message.chat.id, message);
-            }
-        });
-    });
+// إرسال رسالة جماعية
+async function sendMessageToAllUsers(message) {
+    try {
+        const updates = await bot.getUpdates();
+        const uniqueChatIds = [...new Set(updates.map(update => update.message?.chat.id).filter(Boolean))];
+
+        for (const chatId of uniqueChatIds) {
+            await bot.sendMessage(chatId, message);
+        }
+        console.log("✅ تم إرسال الرسالة للجميع.");
+    } catch (error) {
+        console.error("❌ حدث خطأ أثناء إرسال الرسائل:", error.message);
+    }
 }
 
 // تشغيل السيرفر
