@@ -11,7 +11,7 @@ app.get('/', (req, res) => {
 });
 
 // استبدل بالتوكن الخاص بك
-const token = process.env.TELEGRAM_BOT_TOKEN || '7203035834:AAEaT5eaKIKYnbD7jtlEijifCr7z7t1ZBL0';
+const token = process.env.TELEGRAM_BOT_TOKEN || 'YOUR_BOT_TOKEN';
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
@@ -92,14 +92,13 @@ bot.on('message', (msg) => {
 🔍 **تفاصيل الطلب:**
 
 👤 **الاسم**: ${user.name}
-📍 **المحافظة**: ${user.province}
-🏙️ **المدينة**: ${user.district}
 🏘️ **الحي / المنطقة**: ${user.area}
+🏙️ **المدينة**: ${user.district}
+📍 **المحافظة**: ${user.province}
 
 📛 **اسم الموزع**: ${user.distributorName}
 📞 **رقم جوال الموزع**: ${user.distributorPhone}
-🆔 **هوية الموزع**: ${user.distributorId}  
-
+🆔 **هوية الموزع**: ${user.distributorId}
 
 📜 **الحالة**: ${user.status}
 📅 **تاريخ الطلب**: ${user.orderDate}
