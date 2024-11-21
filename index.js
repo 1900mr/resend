@@ -1,5 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs');
+const fs = require('fs'); // مكتبة مراقبة التحديثات في الملفات
 require('dotenv').config();
 const express = require('express');
 
@@ -55,10 +56,20 @@ async function loadDataFromExcel() {
         });
 
         console.log('تم تحميل البيانات بنجاح.');
+        // إرسال رسالة عندما يتم تحميل الكشف الجديد
+        bot.sendMessage(process.env.TELEGRAM_GROUP_ID, "📜 كشف جديد لتعبئة الغاز وصل! يرجى التحقق من البيانات.");
     } catch (error) {
         console.error('حدث خطأ أثناء قراءة ملف Excel:', error.message);
     }
 }
+
+// مراقبة التحديثات في الملف
+fs.watch('gas18-11-2024.xlsx', (eventType, filename) => {
+    if (eventType === 'change') {
+        console.log('تم تحديث الملف، تحميل البيانات الجديدة...');
+        loadDataFromExcel(); // تحميل البيانات الجديدة عند التحديث
+    }
+});
 
 // تحميل البيانات عند بدء التشغيل
 loadDataFromExcel();
