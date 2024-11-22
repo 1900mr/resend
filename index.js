@@ -70,7 +70,7 @@ async function loadDataFromExcelFiles(filePaths) {
 }
 
 // استدعاء الدالة مع ملفات متعددة
-const excelFiles = ['gas18-11-2024.xlsx', 'file2.xlsx', 'file3.xlsx']; // استبدل بأسماء ملفاتك
+const excelFiles = ['gas18-11-2024.xlsx', 'kan.xlsx', 'rfh.xlsx']; // استبدل بأسماء ملفاتك
 loadDataFromExcelFiles(excelFiles);
 
 // قائمة معرفات المسؤولين
@@ -97,6 +97,68 @@ bot.onText(/\/start/, (msg) => {
     }
 
     bot.sendMessage(chatId, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
+});
+
+// التعامل مع الضغط على الأزرار والبحث
+bot.on('message', (msg) => {
+    const chatId = msg.chat.id;
+    const input = msg.text.trim(); // مدخل المستخدم
+
+    if (input === '/start' || input.startsWith('/')) return; // تجاهل الأوامر الأخرى
+
+    if (input === "🔍 البحث برقم الهوية أو الاسم") {
+        bot.sendMessage(chatId, "📝 أدخل رقم الهوية أو الاسم للبحث:");
+    } else if (input === "📞 معلومات الاتصال") {
+        const contactMessage = `
+📞 **معلومات الاتصال:**
+للمزيد من الدعم أو الاستفسار، يمكنك التواصل معنا عبر:
+
+- 📧 البريد الإلكتروني: [mrahel1991@gmail.com]
+- 📱 جوال : [0598550144]
+- 💬 تلغرام : [https://t.me/AhmedGarqoud]
+        `;
+        bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
+    } else if (input === "📖 معلومات عن البوت") {
+        const aboutMessage = `
+🤖 **معلومات عن البوت:**
+هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو الاسم.
+
+- يتم عرض تفاصيل المواطن بما في ذلك بيانات الموزع وحالة الطلب.
+- هدفنا هو تسهيل الوصول إلى البيانات.
+
+🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
+        `;
+        bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
+    } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
+        bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
+        bot.once('message', (broadcastMsg) => {
+            const broadcastText = broadcastMsg.text;
+            sendBroadcastMessage(broadcastText, chatId);
+        });
+    } else {
+        const user = data.find((entry) => entry.idNumber === input || entry.name === input);
+
+        if (user) {
+            const response = `
+🔍 **تفاصيل الطلب:**
+
+👤 **الاسم**: ${user.name}
+🏘️ **الحي / المنطقة**: ${user.area}
+🏙️ **المدينة**: ${user.district}
+📍 **المحافظة**: ${user.province}
+
+📛 **اسم الموزع**: ${user.distributorName}
+📞 **رقم جوال الموزع**: ${user.distributorPhone}
+🆔 **هوية الموزع**: ${user.distributorId}
+
+📜 **الحالة**: ${user.status}
+📅 **تاريخ الطلب**: ${user.orderDate}
+            `;
+            bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
+        } else {
+            bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات للمدخل المقدم.");
+        }
+    }
 });
 
 // إرسال رسالة جماعية
