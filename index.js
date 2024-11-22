@@ -146,7 +146,7 @@ bot.on('message', (msg) => {
         bot.sendMessage(chatId, servicesMessage, { parse_mode: 'Markdown' });
     } else if (input === "🌤️ أحوال الطقس") {
         // استبدل 'YOUR_API_KEY' بـ API مفتاح الطقس الخاص بك
-        axios.get('https://api.openweathermap.org/data/2.5/weather?q=Riyadh&appid=YOUR_API_KEY')
+        axios.get('https://api.openweathermap.org/data/2.5/weather?q=Riyadh&appid=d786708365fa0f6f8b1005370e98f835')
             .then(response => {
                 const weather = response.data;
                 const weatherMessage = `
