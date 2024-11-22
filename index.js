@@ -163,7 +163,7 @@ bot.on('message', (msg) => {
             });
     } else if (input === "💵 أخبار العملات") {
         // استبدل 'YOUR_API_KEY' بـ API مفتاح العملات
-        axios.get('https://api.exchangerate-api.com/v4/latest/USD')
+        axios.get('https://api.exchangerate-api.com/v6/623c6034a8105de8e9768c5b/latest/USD')
             .then(response => {
                 const rates = response.data.rates;
                 const currencyMessage = `
