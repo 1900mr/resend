@@ -31,6 +31,10 @@ async function loadDataFromExcelFiles(filePaths) {
             await workbook.xlsx.readFile(filePath); // قراءة الملف الحالي
             const worksheet = workbook.worksheets[0]; // أول ورقة عمل
 
+            // الحصول على تاريخ آخر تعديل للملف
+            const fileStats = require('fs').statSync(filePath); // قراءة بيانات الملف للحصول على تاريخ آخر تعديل
+            const lastModifiedDate = fileStats.mtime.toISOString().split('T')[0]; // استخراج تاريخ آخر تعديل (YYYY-MM-DD)
+
             worksheet.eachRow((row, rowNumber) => {
                 const idNumber = row.getCell(1).value?.toString().trim(); // رقم الهوية
                 const name = row.getCell(2).value?.toString().trim(); // اسم المواطن
@@ -41,8 +45,8 @@ async function loadDataFromExcelFiles(filePaths) {
                 const distributorName = row.getCell(7).value?.toString().trim(); // اسم الموزع
                 const distributorPhone = row.getCell(8).value?.toString().trim(); // رقم جوال الموزع
                 const status = row.getCell(9).value?.toString().trim(); // الحالة
-                const deliveryDate = row.getCell(10).value?.toString().trim(); // تاريخ تسليم الجرة أو تاريخ تعديل الملف
 
+                // إضافة البيانات مع تاريخ آخر تعديل كـ "تاريخ تسليم الجرة"
                 if (idNumber && name) {
                     data.push({
                         idNumber,
@@ -54,7 +58,7 @@ async function loadDataFromExcelFiles(filePaths) {
                         distributorName: distributorName || "غير متوفر",
                         distributorPhone: distributorPhone || "غير متوفر",
                         status: status || "غير متوفر",
-                        deliveryDate: deliveryDate || "غير متوفر",
+                        deliveryDate: lastModifiedDate, // تاريخ تسليم الجرة بناءً على تاريخ تعديل الملف
                     });
                 }
             });
@@ -70,7 +74,7 @@ async function loadDataFromExcelFiles(filePaths) {
 }
 
 // استدعاء الدالة مع ملفات متعددة
-const excelFiles = ['gas18-11-2024.xlsx', 'kan.xlsx', 'rfh.xlsx']; // استبدل بأسماء ملفاتك
+const excelFiles = ['gas18-11-2024.xlsx', 'file2.xlsx', 'file3.xlsx']; // استبدل بأسماء ملفاتك
 loadDataFromExcelFiles(excelFiles);
 
 // قائمة معرفات المسؤولين
