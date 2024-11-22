@@ -74,7 +74,7 @@ async function loadDataFromExcelFiles(filePaths) {
 }
 
 // استدعاء الدالة مع ملفات متعددة
-const excelFiles = ['gas18-11-2024.xlsx', 'kan.xlsx', 'rfh.xlsx']; // استبدل بأسماء ملفاتك
+const excelFiles = ['bur.xlsx', 'kan.xlsx', 'rfh.xlsx']; // استبدل بأسماء ملفاتك
 loadDataFromExcelFiles(excelFiles);
 
 // قائمة معرفات المسؤولين
