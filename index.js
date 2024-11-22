@@ -2,6 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
 require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
 const express = require('express'); // إضافة Express لتشغيل السيرفر
+const axios = require('axios'); // لاستخدام API للحصول على الطقس وأخبار العملات
 
 // إعداد سيرفر Express (لتشغيل التطبيق على Render أو في بيئة محلية)
 const app = express();
@@ -90,6 +91,7 @@ bot.onText(/\/start/, (msg) => {
             keyboard: [
                 [{ text: "🔍 البحث برقم الهوية أو الاسم" }],
                 [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
+                [{ text: "🌍 الخدمات الإضافية" }],
             ],
             resize_keyboard: true,
             one_time_keyboard: false,
@@ -133,12 +135,48 @@ bot.on('message', (msg) => {
 🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
-    } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
-        bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
-        bot.once('message', (broadcastMsg) => {
-            const broadcastText = broadcastMsg.text;
-            sendBroadcastMessage(broadcastText, chatId);
-        });
+    } else if (input === "🌍 الخدمات الإضافية") {
+        const servicesMessage = `
+اختيارات الخدمات الإضافية:
+
+1. 🌤️ **أحوال الطقس**
+2. 💵 **أخبار العملات**
+اختر الخدمة التي تريدها الآن:
+        `;
+        bot.sendMessage(chatId, servicesMessage, { parse_mode: 'Markdown' });
+    } else if (input === "🌤️ أحوال الطقس") {
+        // استبدل 'YOUR_API_KEY' بـ API مفتاح الطقس الخاص بك
+        axios.get('https://api.openweathermap.org/data/2.5/weather?q=Riyadh&appid=YOUR_API_KEY')
+            .then(response => {
+                const weather = response.data;
+                const weatherMessage = `
+🌤️ **حالة الطقس الآن:**
+- **المدينة**: ${weather.name}
+- **الحرارة**: ${weather.main.temp - 273.15}°C
+- **الوصف**: ${weather.weather[0].description}
+- **الرطوبة**: ${weather.main.humidity}%
+                `;
+                bot.sendMessage(chatId, weatherMessage);
+            })
+            .catch(error => {
+                bot.sendMessage(chatId, "❌ حدث خطأ أثناء جلب حالة الطقس.");
+            });
+    } else if (input === "💵 أخبار العملات") {
+        // استبدل 'YOUR_API_KEY' بـ API مفتاح العملات
+        axios.get('https://api.exchangerate-api.com/v4/latest/USD')
+            .then(response => {
+                const rates = response.data.rates;
+                const currencyMessage = `
+💵 **أسعار العملات الحالية:**
+- **1 USD = ${rates.SAR} SAR (الريال السعودي)**
+- **1 USD = ${rates.EUR} EUR (اليورو)**
+- **1 USD = ${rates.JPY} JPY (الين الياباني)**
+                `;
+                bot.sendMessage(chatId, currencyMessage);
+            })
+            .catch(error => {
+                bot.sendMessage(chatId, "❌ حدث خطأ أثناء جلب أسعار العملات.");
+            });
     } else {
         const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
