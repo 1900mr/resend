@@ -137,10 +137,10 @@ bot.on('message', async (msg) => {
             const usdToJod = rates.JOD || "غير متوفر"; // سعر الدولار مقابل الدينار الأردني
             const usdToEgp = rates.EGP || "غير متوفر"; // سعر الدولار مقابل الجنيه المصري
 
-            const currencyMessage = `
-💱 **أسعار العملات:**
-- 1 دولار أمريكي = ${usdToIls} شيكل
-- 1 دولار أمريكي = ${usdToEur} يورو
+            const currencyMessage =
+                - 1 دولار أمريكي = ${usdToIls} شيكل
+                - 1 دولار أمريكي = ${usdToJod} دينار أردني
+                - 1 دولار أمريكي = ${usdToEgp} جنيه مصري
             `;
             bot.sendMessage(chatId, currencyMessage, { parse_mode: 'Markdown' });
         } catch (error) {
