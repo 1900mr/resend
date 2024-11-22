@@ -1,8 +1,8 @@
 const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
-const fs = require('fs'); // استيراد مكتبة fs للتعامل مع الملفات
 require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
 const express = require('express'); // إضافة Express لتشغيل السيرفر
+const fs = require('fs');
 
 // إعداد سيرفر Express (لتشغيل التطبيق على Render أو في بيئة محلية)
 const app = express();
@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 });
 
 // استبدل بالتوكن الخاص بك
-const token = process.env.TELEGRAM_BOT_TOKEN || 'AAEaT5eaKIKYnbD7jtlEijifCr7z7t1ZBL0';
+const token = process.env.TELEGRAM_BOT_TOKEN || '7203035834:AAEaT5eaKIKYnbD7jtlEijifCr7z7t1ZBL0';
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
@@ -23,62 +23,56 @@ let data = [];
 // حفظ معرفات المستخدمين الذين يتفاعلون مع البوت
 let userIds = new Set(); // Set للحفاظ على المعرفات الفريدة للمستخدمين
 
-// دالة لتحميل البيانات من ملفات Excel متعددة مع تحديد تاريخ تعديل الملف
-async function loadDataFromExcelFiles(filePaths) {
-    data = []; // إعادة تعيين المصفوفة لتجنب التكرار
+// قائمة معرفات المسؤولين
+const adminIds = process.env.ADMIN_IDS?.split(',') || ['7719756994']; // إضافة المعرفات الفعلية للمسؤولين
+
+// دالة لتحميل البيانات من Excel
+async function loadDataFromExcel() {
     try {
-        for (const filePath of filePaths) {
-            const workbook = new ExcelJS.Workbook();
-            await workbook.xlsx.readFile(filePath); // قراءة الملف الحالي
-            const worksheet = workbook.worksheets[0]; // أول ورقة عمل
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.readFile('gas18-11-2024.xlsx'); // اسم الملف
+        const worksheet = workbook.worksheets[0]; // أول ورقة عمل
 
-            // جلب تاريخ تعديل الملف
-            const fileStats = fs.statSync(filePath);
-            const lastModifiedDate = new Date(fileStats.mtime).toLocaleDateString(); // تحويل التاريخ إلى صيغة نصية
+        data = []; // تصفير البيانات القديمة
+        const fileStats = fs.statSync('gas18-11-2024.xlsx'); // قراءة بيانات الملف للحصول على تاريخ آخر تعديل
+        const lastModifiedDate = fileStats.mtime.toISOString().split('T')[0]; // استخراج تاريخ آخر تعديل
 
-            worksheet.eachRow((row, rowNumber) => {
-                const idNumber = row.getCell(1).value?.toString().trim(); // رقم الهوية
-                const name = row.getCell(2).value?.toString().trim(); // اسم المواطن
-                const province = row.getCell(3).value?.toString().trim(); // المحافظة
-                const district = row.getCell(4).value?.toString().trim(); // المدينة
-                const area = row.getCell(5).value?.toString().trim(); // الحي/المنطقة
-                const distributorId = row.getCell(6).value?.toString().trim(); // هوية الموزع
-                const distributorName = row.getCell(7).value?.toString().trim(); // اسم الموزع
-                const distributorPhone = row.getCell(8).value?.toString().trim(); // رقم جوال الموزع
-                const status = row.getCell(9).value?.toString().trim(); // الحالة
+        worksheet.eachRow((row, rowNumber) => {
+            const idNumber = row.getCell(1).value?.toString().trim(); // رقم الهوية
+            const name = row.getCell(2).value?.toString().trim(); // اسم المواطن
+            const province = row.getCell(3).value?.toString().trim(); // المحافظة
+            const district = row.getCell(4).value?.toString().trim(); // المدينة
+            const area = row.getCell(5).value?.toString().trim(); // الحي/المنطقة
+            const distributorId = row.getCell(6).value?.toString().trim(); // هوية الموزع
+            const distributorName = row.getCell(7).value?.toString().trim(); // اسم الموزع
+            const distributorPhone = row.getCell(8).value?.toString().trim(); // رقم جوال الموزع
+            const status = row.getCell(9).value?.toString().trim(); // الحالة
 
-                if (idNumber && name) {
-                    data.push({
-                        idNumber,
-                        name,
-                        province: province || "غير متوفر",
-                        district: district || "غير متوفر",
-                        area: area || "غير متوفر",
-                        distributorId: distributorId || "غير متوفر",
-                        distributorName: distributorName || "غير متوفر",
-                        distributorPhone: distributorPhone || "غير متوفر",
-                        status: status || "غير متوفر",
-                        deliveryDate: lastModifiedDate || "غير متوفر", // تاريخ تعديل الملف كـ تاريخ تسليم الجرة
-                    });
-                }
-            });
-        }
+            if (idNumber && name) {
+                data.push({
+                    idNumber,
+                    name,
+                    province: province || "غير متوفر",
+                    district: district || "غير متوفر",
+                    area: area || "غير متوفر",
+                    distributorId: distributorId || "غير متوفر",
+                    distributorName: distributorName || "غير متوفر",
+                    distributorPhone: distributorPhone || "غير متوفر",
+                    status: status || "غير متوفر",
+                    deliveryDate: lastModifiedDate, // تاريخ تعديل الملف كـ "تاريخ تسليم الجرة"
+                });
+            }
+        });
 
-        console.log('📁 تم تحميل البيانات من جميع الملفات بنجاح.');
-
-        // إرسال تنبيه للمسؤولين
+        console.log('تم تحميل البيانات بنجاح.');
         sendMessageToAdmins("📢 تم تحديث البيانات من جميع الملفات بنجاح! يمكنك الآن البحث في البيانات المحدثة.");
     } catch (error) {
-        console.error('❌ حدث خطأ أثناء قراءة ملفات Excel:', error.message);
+        console.error('حدث خطأ أثناء قراءة ملف Excel:', error.message);
     }
 }
 
-// استدعاء الدالة مع ملفات متعددة
-const excelFiles = ['gas18-11-2024.xlsx', 'kan.xlsx', 'rfh.xlsx']; // استبدل بأسماء ملفاتك
-loadDataFromExcelFiles(excelFiles);
-
-// قائمة معرفات المسؤولين
-const adminIds = process.env.ADMIN_IDS?.split(',') || ['7719756994']; // إضافة المعرفات الفعلية للمسؤولين
+// تحميل البيانات عند بدء التشغيل
+loadDataFromExcel();
 
 // الرد على أوامر البوت
 bot.onText(/\/start/, (msg) => {
@@ -103,13 +97,14 @@ bot.onText(/\/start/, (msg) => {
     bot.sendMessage(chatId, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
-// التعامل مع الضغط على الأزرار والبحث
+// التعامل مع الضغط على الأزرار
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
     const input = msg.text.trim(); // مدخل المستخدم
 
     if (input === '/start' || input.startsWith('/')) return; // تجاهل الأوامر الأخرى
 
+    // التعامل مع الأزرار
     if (input === "🔍 البحث برقم الهوية أو الاسم") {
         bot.sendMessage(chatId, "📝 أدخل رقم الهوية أو الاسم للبحث:");
     } else if (input === "📞 معلومات الاتصال") {
@@ -125,14 +120,23 @@ bot.on('message', (msg) => {
     } else if (input === "📖 معلومات عن البوت") {
         const aboutMessage = `
 🤖 **معلومات عن البوت:**
-هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو الاسم.
+هذا البوت يتيح لك البحث عن المواطنين باستخدام رقم الهوية أو الاسم
 
+- يمكنك البحث باستخدام رقم الهوية أو الاسم.
 - يتم عرض تفاصيل المواطن بما في ذلك بيانات الموزع وحالة الطلب.
-- هدفنا هو تسهيل الوصول إلى البيانات.
+
+هدفنا هو تسهيل الوصول إلى البيانات من خلال هذه الخدمة.
+هذه الخدمة ليست حكومية وانما خدمة من جهد شخصي
 
 🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
+    } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
+        bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
+        bot.once('message', (broadcastMsg) => {
+            const broadcastText = broadcastMsg.text;
+            sendBroadcastMessage(broadcastText, chatId);
+        });
     } else {
         const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
