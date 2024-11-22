@@ -134,13 +134,12 @@ bot.on('message', async (msg) => {
             const response = await axios.get(currencyUrl);
             const rates = response.data.rates;
             const usdToIls = rates.ILS || "غير متوفر"; // سعر الدولار مقابل الشيكل
-            const usdToJod = rates.JOD || "غير متوفر"; // سعر الدولار مقابل الدينار الأردني
-            const usdToEgp = rates.EGP || "غير متوفر"; // سعر الدولار مقابل الجنيه المصري
+            const usdToEur = rates.EUR || "غير متوفر"; // سعر الدولار مقابل اليورو
 
-            const currencyMessage =`
-                - 1 دولار أمريكي = ${usdToIls} شيكل
-                - 1 دولار أمريكي = ${usdToJod} دينار أردني
-                - 1 دولار أمريكي = ${usdToEgp} جنيه مصري
+            const currencyMessage = `
+💱 **أسعار العملات:**
+- 1 دولار أمريكي = ${usdToIls} شيكل
+- 1 دولار أمريكي = ${usdToEur} يورو
             `;
             bot.sendMessage(chatId, currencyMessage, { parse_mode: 'Markdown' });
         } catch (error) {
@@ -162,7 +161,7 @@ bot.on('message', async (msg) => {
 
 📛 **اسم الموزع**: ${user.distributorName}
 📞 **رقم جوال الموزع**: ${user.distributorPhone}
-🆔 **هوية الموزع**: ${user.distributorId}
+                                           🆔 **هوية الموزع**: ${user.distributorId}
 
 📜 **الحالة**: ${user.status}
 📅 **تاريخ تسليم الجرة**: ${user.deliveryDate}
