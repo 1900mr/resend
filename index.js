@@ -1,5 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
+const fs = require('fs'); // استيراد مكتبة fs للتعامل مع الملفات
 require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
 const express = require('express'); // إضافة Express لتشغيل السيرفر
 
@@ -22,7 +23,7 @@ let data = [];
 // حفظ معرفات المستخدمين الذين يتفاعلون مع البوت
 let userIds = new Set(); // Set للحفاظ على المعرفات الفريدة للمستخدمين
 
-// دالة لتحميل البيانات من عدة ملفات Excel
+// دالة لتحميل البيانات من ملفات Excel متعددة مع تحديد تاريخ تعديل الملف
 async function loadDataFromExcelFiles(filePaths) {
     data = []; // إعادة تعيين المصفوفة لتجنب التكرار
     try {
@@ -30,6 +31,10 @@ async function loadDataFromExcelFiles(filePaths) {
             const workbook = new ExcelJS.Workbook();
             await workbook.xlsx.readFile(filePath); // قراءة الملف الحالي
             const worksheet = workbook.worksheets[0]; // أول ورقة عمل
+
+            // جلب تاريخ تعديل الملف
+            const fileStats = fs.statSync(filePath);
+            const lastModifiedDate = new Date(fileStats.mtime).toLocaleDateString(); // تحويل التاريخ إلى صيغة نصية
 
             worksheet.eachRow((row, rowNumber) => {
                 const idNumber = row.getCell(1).value?.toString().trim(); // رقم الهوية
@@ -41,7 +46,6 @@ async function loadDataFromExcelFiles(filePaths) {
                 const distributorName = row.getCell(7).value?.toString().trim(); // اسم الموزع
                 const distributorPhone = row.getCell(8).value?.toString().trim(); // رقم جوال الموزع
                 const status = row.getCell(9).value?.toString().trim(); // الحالة
-                const orderDate = row.getCell(12).value?.toString().trim(); // تاريخ الطلب
 
                 if (idNumber && name) {
                     data.push({
@@ -54,7 +58,7 @@ async function loadDataFromExcelFiles(filePaths) {
                         distributorName: distributorName || "غير متوفر",
                         distributorPhone: distributorPhone || "غير متوفر",
                         status: status || "غير متوفر",
-                        orderDate: orderDate || "غير متوفر",
+                        deliveryDate: lastModifiedDate || "غير متوفر", // تاريخ تعديل الملف كـ تاريخ تسليم الجرة
                     });
                 }
             });
@@ -129,12 +133,6 @@ bot.on('message', (msg) => {
 🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
-    } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
-        bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
-        bot.once('message', (broadcastMsg) => {
-            const broadcastText = broadcastMsg.text;
-            sendBroadcastMessage(broadcastText, chatId);
-        });
     } else {
         const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
@@ -152,7 +150,7 @@ bot.on('message', (msg) => {
 🆔 **هوية الموزع**: ${user.distributorId}
 
 📜 **الحالة**: ${user.status}
-📅 **تاريخ الطلب**: ${user.orderDate}
+📅 **تاريخ تسليم الجرة**: ${user.deliveryDate}
             `;
             bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
         } else {
