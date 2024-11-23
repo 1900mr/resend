@@ -2,6 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
 require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
 const express = require('express'); // إضافة Express لتشغيل السيرفر
+const axios = require('axios'); // لإجراء استدعاء API
 
 // إعداد سيرفر Express (لتشغيل التطبيق على Render أو في بيئة محلية)
 const app = express();
@@ -105,8 +106,42 @@ bot.onText(/\/start/, (msg) => {
     bot.sendMessage(chatId, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
+// دالة للحصول على حالة الطقس
+async function getWeather(city) {
+    try {
+        const response = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.2fb04804fafc0c123fe58778ef5d878b}&units=metric&lang=ar`);
+        const data = response.data;
+        return `
+🌤️ **حالة الطقس في ${data.name}**:
+- درجة الحرارة: ${data.main.temp}°C
+- حالة السماء: ${data.weather[0].description}
+- الرطوبة: ${data.main.humidity}%
+- الرياح: ${data.wind.speed} متر/ثانية
+        `;
+    } catch (error) {
+        return "❌ لم أتمكن من الحصول على بيانات الطقس في هذه المدينة. يرجى المحاولة لاحقًا.";
+    }
+}
+
+// دالة للحصول على أسعار العملات
+async function getCurrencyRates() {
+    try {
+        const response = await axios.get(`https://v6.exchangerate-api.com/v6/${process.env.5884bd60fbdb6ea892ed9b76 }/latest/USD`);
+        const data = response.data;
+        return `
+💰 **أسعار العملات الحالية**:
+- 1 USD = ${data.conversion_rates.EGP} جنيه مصري
+- 1 USD = ${data.conversion_rates.SAR} ريال سعودي
+- 1 USD = ${data.conversion_rates.EUR} يورو
+- 1 USD = ${data.conversion_rates.AED} درهم إماراتي
+        `;
+    } catch (error) {
+        return "❌ لم أتمكن من الحصول على أسعار العملات. يرجى المحاولة لاحقًا.";
+    }
+}
+
 // التعامل مع الضغط على الأزرار والبحث
-bot.on('message', (msg) => {
+bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const input = msg.text.trim(); // مدخل المستخدم
 
@@ -136,51 +171,13 @@ bot.on('message', (msg) => {
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
     } else if (input === "🌤️ أحوال الطقس") {
-        const city = "غزة"; // يمكنك السماح للمستخدم باختيار مدينة
-        const apiKey = "2fb04804fafc0c123fe58778ef5d878b"; // أدخل مفتاح API الخاص بـ OpenWeather
-        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&lang=ar&appid=${apiKey}`;
-
-        try {
-            const response = await axios.get(weatherUrl);
-            const weather = response.data;
-            const weatherMessage = `
-🌤 **أحوال الطقس في ${city}:**
-- الحالة: ${weather.weather[0].description}
-- درجة الحرارة: ${weather.main.temp}°C
-- الرطوبة: ${weather.main.humidity}%
-- الرياح: ${weather.wind.speed} م/ث
-            `;
-            bot.sendMessage(chatId, weatherMessage, { parse_mode: 'Markdown' });
-        } catch (error) {
-            bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب معلومات الطقس.");
-        }
-
-
-        
+        bot.sendMessage(chatId, "📡 جاري تحميل حالة الطقس...");
+        const weather = await getWeather("Cairo"); // يمكنك تعديل المدينة هنا أو طلب المدينة من المستخدم
+        bot.sendMessage(chatId, weather);
     } else if (input === "💰 أسعار العملات") {
-        const currencyUrl = "https://api.exchangerate-api.com/v4/623c6034a8105de8e9768c5b/latest/USD";
-        const response = await axios.get(currencyUrl);
-        const rates = response.data.rates;
-
-        // جلب أسعار العملات
-        const usdToIls = rates.ILS || "غير متوفر"; // سعر الدولار مقابل الشيكل
-        const usdToJod = rates.JOD || "غير متوفر"; // سعر الدولار مقابل الدينار الأردني
-        const usdToEgp = rates.EGP || "غير متوفر"; // سعر الدولار مقابل الجنيه المصري
-
-        // رسالة العملات
-        const currencyMessage = `
-💱 **أسعار العملات:**
-- 1 دولار أمريكي = ${usdToIls} شيكل
-- 1 دولار أمريكي = ${usdToJod} دينار أردني
-- 1 دولار أمريكي = ${usdToEgp} جنيه مصري
-            `;
-            bot.sendMessage(chatId, currencyMessage, { parse_mode: 'Markdown' });
-        } catch (error) {
-            bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب أسعار العملات.");
-    }
-
-
-        
+        bot.sendMessage(chatId, "📡 جاري تحميل أسعار العملات...");
+        const rates = await getCurrencyRates();
+        bot.sendMessage(chatId, rates);
     } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
         bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
         bot.once('message', (broadcastMsg) => {
