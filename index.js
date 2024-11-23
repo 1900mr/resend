@@ -126,9 +126,12 @@ bot.on('message', async (msg) => {
         `;
         bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
 
-    } else if (input === "💱 أسعار العملات") {
+    } else else if (input === "💱 أسعار العملات") {
     try {
-        const currencyUrl = "https://api.exchangerate-api.com/v4/623c6034a8105de8e9768c5b/latest/USD";
+        // تضمين مفتاح API في الرابط بشكل صحيح
+        const apiKey = "623c6034a8105de8e9768c5b"; // مفتاح API الخاص بك
+        const currencyUrl = `https://api.exchangerate-api.com/v4/${apiKey}/latest/USD`;
+
         const response = await axios.get(currencyUrl);
         const rates = response.data.rates;
 
@@ -137,17 +140,25 @@ bot.on('message', async (msg) => {
         const usdToJod = rates.JOD || "غير متوفر"; // سعر الدولار مقابل الدينار الأردني
         const usdToEgp = rates.EGP || "غير متوفر"; // سعر الدولار مقابل الجنيه المصري
 
+        // حساب تحويل الدينار الأردني والجنيه المصري إلى الشيكل
+        const jodToIls = (usdToIls / usdToJod).toFixed(2) || "غير متوفر"; // سعر الدينار الأردني مقابل الشيكل
+        const egpToIls = (usdToIls / usdToEgp).toFixed(2) || "غير متوفر"; // سعر الجنيه المصري مقابل الشيكل
+
         // رسالة العملات
         const currencyMessage = `
 💱 **أسعار العملات:**
 - 1 دولار أمريكي = ${usdToIls} شيكل
-- 1 دولار أمريكي = ${usdToJod} دينار أردني
-- 1 دولار أمريكي = ${usdToEgp} جنيه مصري
-            `;
-            bot.sendMessage(chatId, currencyMessage, { parse_mode: 'Markdown' });
-        } catch (error) {
-            bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب أسعار العملات.");
-        }
+- 1 دينار أردني = ${jodToIls} شيكل
+- 1 جنيه مصري = ${egpToIls} شيكل
+        `;
+
+        bot.sendMessage(chatId, currencyMessage, { parse_mode: 'Markdown' });
+    } catch (error) {
+        console.error("⚠️ حدث خطأ أثناء جلب أسعار العملات:", error.message);
+        bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب أسعار العملات.");
+    }
+}
+
 
     } else if (input === "🌤 أحوال الطقس") {
         const city = "غزة"; // يمكنك السماح للمستخدم باختيار مدينة
