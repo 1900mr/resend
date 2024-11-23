@@ -177,7 +177,7 @@ bot.on('message', (msg) => {
             bot.sendMessage(chatId, currencyMessage, { parse_mode: 'Markdown' });
         } catch (error) {
             bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب أسعار العملات.");
-        {
+    }
 
 
         
