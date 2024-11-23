@@ -89,6 +89,7 @@ bot.onText(/\/start/, (msg) => {
         reply_markup: {
             keyboard: [
                 [{ text: "🔍 البحث برقم الهوية أو الاسم" }],
+                [{ text: "🌤 أحوال الطقس" }, { text: "💱 أسعار العملات" }],
                 [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
             ],
             resize_keyboard: true,
@@ -112,6 +113,8 @@ bot.on('message', (msg) => {
 
     if (input === "🔍 البحث برقم الهوية أو الاسم") {
         bot.sendMessage(chatId, "📝 أدخل رقم الهوية أو الاسم للبحث:");
+
+        
     } else if (input === "📞 معلومات الاتصال") {
         const contactMessage = `
 📞 **معلومات الاتصال:**
@@ -122,6 +125,47 @@ bot.on('message', (msg) => {
 - 💬 تلغرام : [https://t.me/AhmedGarqoud]
         `;
         bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
+
+        else if (input === "💱 أسعار العملات") {
+        const currencyUrl = "https://api.exchangerate-api.com/v4/623c6034a8105de8e9768c5b/latest/USD"; // مثال على API لأسعار العملات
+
+        try {
+            const response = await axios.get(currencyUrl);
+            const rates = response.data.rates;
+            const usdToIls = rates.ILS || "غير متوفر"; // سعر الدولار مقابل الشيكل
+            const usdToEur = rates.EUR || "غير متوفر"; // سعر الدولار مقابل اليورو
+
+            const currencyMessage = `
+💱 **أسعار العملات:**
+- 1 دولار أمريكي = ${usdToIls} شيكل
+- 1 دولار أمريكي = ${usdToEur} يورو
+            `;
+            bot.sendMessage(chatId, currencyMessage, { parse_mode: 'Markdown' });
+        } catch (error) {
+            bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب أسعار العملات.");
+        }
+
+        else if (input === "🌤 أحوال الطقس") {
+        const city = "غزة"; // يمكنك السماح للمستخدم باختيار مدينة
+        const apiKey = "2fb04804fafc0c123fe58778ef5d878b"; // أدخل مفتاح API الخاص بـ OpenWeather
+        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&lang=ar&appid=${apiKey}`;
+
+        try {
+            const response = await axios.get(weatherUrl);
+            const weather = response.data;
+            const weatherMessage = `
+🌤 **أحوال الطقس في ${city}:**
+- الحالة: ${weather.weather[0].description}
+- درجة الحرارة: ${weather.main.temp}°C
+- الرطوبة: ${weather.main.humidity}%
+- الرياح: ${weather.wind.speed} م/ث
+            `;
+            bot.sendMessage(chatId, weatherMessage, { parse_mode: 'Markdown' });
+        } catch (error) {
+            bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب معلومات الطقس.");
+        }
+
+        
     } else if (input === "📖 معلومات عن البوت") {
         const aboutMessage = `
 🤖 **معلومات عن البوت:**
@@ -133,12 +177,16 @@ bot.on('message', (msg) => {
 🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
+
+        
     } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
         bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
         bot.once('message', (broadcastMsg) => {
             const broadcastText = broadcastMsg.text;
             sendBroadcastMessage(broadcastText, chatId);
         });
+
+        
     } else {
         const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
