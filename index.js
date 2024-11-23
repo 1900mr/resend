@@ -118,6 +118,48 @@ bot.onText(/\/start/, (msg) => {
     bot.sendMessage(chatId, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
+
+// دالة للحصول على حالة الطقس في مدينة غزة فقط
+async function getWeather() {
+    try {
+        const city = "Gaza"; // اسم المدينة ثابت هنا كـ "غزة"
+        const response = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric&lang=ar`);
+        const data = response.data;
+        return `
+🌤️ **حالة الطقس في ${data.name}**:
+- درجة الحرارة: ${data.main.temp}°C
+- حالة السماء: ${data.weather[0].description}
+- الرطوبة: ${data.main.humidity}%
+- الرياح: ${data.wind.speed} متر/ثانية
+        `;
+    } catch (error) {
+        return "❌ لم أتمكن من الحصول على بيانات الطقس في مدينة غزة. يرجى المحاولة لاحقًا.";
+    }
+}
+
+
+// دالة للحصول على أسعار العملات
+async function getCurrencyRates() {
+    try {
+        const response = await axios.get(`https://v6.exchangerate-api.com/v6/${CURRENCY_API_KEY}/latest/USD`);
+        const data = response.data;
+
+        // احصل على أسعار العملات المطلوبة
+        const usdToIls = data.conversion_rates.ILS; // 1 USD إلى شيكل إسرائيلي
+        const ilsToJod = data.conversion_rates.JOD; // 1 ILS إلى دينار أردني
+        const ilsToEgp = data.conversion_rates.EGP; // 1 ILS إلى جنيه مصري
+
+        return `
+💰 **أسعار العملات الحالية**:
+- 1 دولار أمريكي (USD) = ${usdToIls} شيكل إسرائيلي (ILS)
+- 1 شيكل إسرائيلي (ILS) = ${ilsToJod} دينار أردني (JOD)
+- 1 شيكل إسرائيلي (ILS) = ${ilsToEgp} جنيه مصري (EGP)
+        `;
+    } catch (error) {
+        return "❌ لم أتمكن من الحصول على أسعار العملات. يرجى المحاولة لاحقًا.";
+    }
+}
+
 // دالة لعرض الأحداث من Google Calendar
 async function getGoogleCalendarEvents() {
     try {
