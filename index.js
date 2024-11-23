@@ -126,7 +126,7 @@ bot.on('message', async (msg) => {
         `;
         bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
 
-    } else else if (input === "💱 أسعار العملات") {
+    } else if (input === "💱 أسعار العملات") {
     try {
         // تضمين مفتاح API في الرابط بشكل صحيح
         const apiKey = "623c6034a8105de8e9768c5b"; // مفتاح API الخاص بك
