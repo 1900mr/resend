@@ -1,18 +1,21 @@
 const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
-require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
 const express = require('express'); // إضافة Express لتشغيل السيرفر
 const axios = require('axios'); // لإجراء استدعاء API
 
 // إعداد سيرفر Express (لتشغيل التطبيق على Render أو في بيئة محلية)
 const app = express();
-const port = process.env.PORT || 4000; // المنفذ الافتراضي
+const port = 4000; // المنفذ الافتراضي
 app.get('/', (req, res) => {
     res.send('The server is running successfully.');
 });
 
 // استبدل بالتوكن الخاص بك
-const token = process.env.TELEGRAM_BOT_TOKEN || '7857872067:AAEDH3UChHfGDul0f0TdsPOoECbHv2HCDyQ';
+const token = '7857872067:AAEDH3UChHfGDul0f0TdsPOoECbHv2HCDyQ';
+
+// API Keys مباشرة في الكود
+const WEATHER_API_KEY = '2fb04804fafc0c123fe58778ef5d878b'; // ضع مفتاح API الخاص بالطقس
+const CURRENCY_API_KEY = '5884bd60fbdb6ea892ed9b76 '; // ضع مفتاح API الخاص بالعملات
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
@@ -79,7 +82,7 @@ const excelFiles = ['bur.xlsx', 'kan.xlsx', 'rfh.xlsx']; // استبدل بأس�
 loadDataFromExcelFiles(excelFiles);
 
 // قائمة معرفات المسؤولين
-const adminIds = process.env.ADMIN_IDS?.split(',') || ['7719756994']; // إضافة المعرفات الفعلية للمسؤولين
+const adminIds = ['7719756994']; // إضافة المعرفات الفعلية للمسؤولين
 
 // الرد على أوامر البوت
 bot.onText(/\/start/, (msg) => {
@@ -109,7 +112,7 @@ bot.onText(/\/start/, (msg) => {
 // دالة للحصول على حالة الطقس
 async function getWeather(city) {
     try {
-        const response = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.2fb04804fafc0c123fe58778ef5d878b}&units=metric&lang=ar`);
+        const response = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric&lang=ar`);
         const data = response.data;
         return `
 🌤️ **حالة الطقس في ${data.name}**:
@@ -126,7 +129,7 @@ async function getWeather(city) {
 // دالة للحصول على أسعار العملات
 async function getCurrencyRates() {
     try {
-        const response = await axios.get(`https://v6.exchangerate-api.com/v6/${process.env.5884bd60fbdb6ea892ed9b76 }/latest/USD`);
+        const response = await axios.get(`https://v6.exchangerate-api.com/v6/${CURRENCY_API_KEY}/latest/USD`);
         const data = response.data;
         return `
 💰 **أسعار العملات الحالية**:
