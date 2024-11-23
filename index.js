@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 });
 
 // استبدل بالتوكن الخاص بك
-const token = process.env.TELEGRAM_BOT_TOKEN || '7201507244:AAFmUzJTZ0CuhWxTE_BjwQJ-XB3RXlYMKYU';
+const token = process.env.TELEGRAM_BOT_TOKEN || '7859625373:AAEFlMbm3Sfagj4S9rx5ixbfqItE1jNpDos';
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
