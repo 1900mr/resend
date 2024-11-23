@@ -111,9 +111,11 @@ bot.onText(/\/start/, (msg) => {
     bot.sendMessage(chatId, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
-// دالة للحصول على حالة الطقس
-async function getWeather(city) {
+
+// دالة للحصول على حالة الطقس في مدينة غزة فقط
+async function getWeather() {
     try {
+        const city = "Gaza"; // اسم المدينة ثابت هنا كـ "غزة"
         const response = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric&lang=ar`);
         const data = response.data;
         return `
@@ -124,9 +126,10 @@ async function getWeather(city) {
 - الرياح: ${data.wind.speed} متر/ثانية
         `;
     } catch (error) {
-        return "❌ لم أتمكن من الحصول على بيانات الطقس في هذه المدينة. يرجى المحاولة لاحقًا.";
+        return "❌ لم أتمكن من الحصول على بيانات الطقس في مدينة غزة. يرجى المحاولة لاحقًا.";
     }
 }
+
 
 // دالة للحصول على أسعار العملات
 async function getCurrencyRates() {
