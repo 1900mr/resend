@@ -128,7 +128,10 @@ bot.on('message', async (msg) => {
 
     } else if (input === "💱 أسعار العملات") {
     try {
-        const currencyUrl = "https://api.exchangerate-api.com/v4/latest/USD";
+        // تضمين مفتاح API في الرابط
+        const apiKey = "623c6034a8105de8e9768c5b"; // مفتاح API الخاص بك
+        const currencyUrl = `https://api.exchangerate-api.com/v4/${apiKey}/latest/USD`;
+
         const response = await axios.get(currencyUrl);
         const rates = response.data.rates;
 
