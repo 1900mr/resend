@@ -260,11 +260,11 @@ bot.on('message', async (msg) => {
     }
 });
 
-// إرسال رسالة جماعية
 async function sendBroadcastMessage(message, adminChatId) {
-    userIds.forEach(userId => {
-        bot.sendMessage(userId, message);
-    });
+    for (const userId of userIds) {
+        await bot.sendMessage(userId, message).catch(err => console.error(`Failed to send to ${userId}:`, err));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // انتظار 1 ثانية بين كل رسالة
+    }
     bot.sendMessage(adminChatId, "✅ تم إرسال الرسالة للجميع بنجاح.");
 }
 
