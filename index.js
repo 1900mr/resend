@@ -11,7 +11,7 @@ app.get('/', (req, res) => {
 });
 
 // استبدل بالتوكن الخاص بك
-const token = '7857872067:AAEDH3UChHfGDul0f0TdsPOoECbHv2HCDyQ';
+const token = '7859625373:AAEFlMbm3Sfagj4S9rx5ixbfqItE1jNpDos';
 
 // API Keys مباشرة في الكود
 const WEATHER_API_KEY = '2fb04804fafc0c123fe58778ef5d878b'; // ضع مفتاح API الخاص بالطقس
