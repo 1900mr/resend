@@ -136,17 +136,23 @@ async function getCurrencyRates() {
     try {
         const response = await axios.get(`https://v6.exchangerate-api.com/v6/${CURRENCY_API_KEY}/latest/USD`);
         const data = response.data;
+
+        // احصل على أسعار العملات المطلوبة
+        const usdToIls = data.conversion_rates.ILS; // 1 USD إلى شيكل إسرائيلي
+        const ilsToJod = data.conversion_rates.JOD; // 1 ILS إلى دينار أردني
+        const ilsToEgp = data.conversion_rates.EGP; // 1 ILS إلى جنيه مصري
+
         return `
 💰 **أسعار العملات الحالية**:
-- 1 USD = ${data.conversion_rates.EGP} جنيه مصري
-- 1 USD = ${data.conversion_rates.SAR} ريال سعودي
-- 1 USD = ${data.conversion_rates.EUR} يورو
-- 1 USD = ${data.conversion_rates.AED} درهم إماراتي
+- 1 دولار أمريكي (USD) = ${usdToIls} شيكل إسرائيلي (ILS)
+- 1 شيكل إسرائيلي (ILS) = ${ilsToJod} دينار أردني (JOD)
+- 1 شيكل إسرائيلي (ILS) = ${ilsToEgp} جنيه مصري (EGP)
         `;
     } catch (error) {
         return "❌ لم أتمكن من الحصول على أسعار العملات. يرجى المحاولة لاحقًا.";
     }
 }
+
 
 // التعامل مع الضغط على الأزرار والبحث
 bot.on('message', async (msg) => {
