@@ -82,7 +82,9 @@ const excelFiles = ['bur.xlsx', 'kan.xlsx', 'rfh.xlsx']; // استبدل بأس�
 loadDataFromExcelFiles(excelFiles);
 
 // قائمة معرفات المسؤولين
-const adminIds = ['7719756994']; // إضافة المعرفات الفعلية للمسؤولين
+const adminIds = process.env.ADMIN_IDS?.split(',') || ['7719756994']; // إضافة المعرفات الفعلية للمسؤولين
+
+
 
 // الرد على أوامر البوت
 bot.onText(/\/start/, (msg) => {
