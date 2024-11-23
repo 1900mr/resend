@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 });
 
 // استبدل بالتوكن الخاص بك
-const token = process.env.TELEGRAM_BOT_TOKEN || '7859625373:AAEFlMbm3Sfagj4S9rx5ixbfqItE1jNpDos';
+const token = process.env.TELEGRAM_BOT_TOKEN || '7201507244:AAFmUzJTZ0CuhWxTE_BjwQJ-XB3RXlYMKYU';
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
@@ -166,7 +166,7 @@ bot.on('message', async (msg) => {
 
 📛 **اسم الموزع**: ${user.distributorName}
 📞 **رقم جوال الموزع**: ${user.distributorPhone}
-                                           🆔 **هوية الموزع**: ${user.distributorId}
+🆔 **هوية الموزع**: ${user.distributorId}
 
 📜 **الحالة**: ${user.status}
 📅 **تاريخ تسليم الجرة**: ${user.deliveryDate}
