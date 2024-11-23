@@ -20,9 +20,9 @@ const CURRENCY_API_KEY = '5884bd60fbdb6ea892ed9b76'; // ضع مفتاح API ال
 
 // إعداد OAuth2 من Google API
 const oauth2Client = new google.auth.OAuth2(
-    'YOUR_CLIENT_ID',  // استبدل بـ Client ID الخاص بك
-    'YOUR_CLIENT_SECRET', // استبدل بـ Client Secret الخاص بك
-    'YOUR_REDIRECT_URI' // استبدل بـ Redirect URI الخاص بك
+    '723821711417-jnu2nv8d7356jvjijlgtfnjed5nvth9m.apps.googleusercontent.com',  // استبدل بـ Client ID الخاص بك
+    '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', // استبدل بـ Client Secret الخاص بك
+    'https://github.com/1900mr/resend/blob/main/index.js' // استبدل بـ Redirect URI الخاص بك
 );
 
 // إنشاء البوت
