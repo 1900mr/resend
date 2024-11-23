@@ -15,7 +15,7 @@ const token = '7859625373:AAEFlMbm3Sfagj4S9rx5ixbfqItE1jNpDos';
 
 // API Keys مباشرة في الكود
 const WEATHER_API_KEY = '2fb04804fafc0c123fe58778ef5d878b'; // ضع مفتاح API الخاص بالطقس
-const CURRENCY_API_KEY = '5884bd60fbdb6ea892ed9b76 '; // ضع مفتاح API الخاص بالعملات
+const CURRENCY_API_KEY = '5884bd60fbdb6ea892ed9b76'; // ضع مفتاح API الخاص بالعملات
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
@@ -189,6 +189,8 @@ bot.on('message', async (msg) => {
             const broadcastText = broadcastMsg.text;
             sendBroadcastMessage(broadcastText, chatId);
         });
+
+
     } else {
         const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
