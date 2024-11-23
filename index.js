@@ -1,5 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
+const axios = require('axios'); // استيراد مكتبة axios لجلب البيانات من API
 require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
 const express = require('express'); // إضافة Express لتشغيل السيرفر
 
@@ -104,8 +105,8 @@ bot.onText(/\/start/, (msg) => {
     bot.sendMessage(chatId, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
-// التعامل مع الضغط على الأزرار والبحث
-bot.on('message', (msg) => {
+// التعامل مع الرسائل المختلفة
+bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const input = msg.text.trim(); // مدخل المستخدم
 
@@ -114,7 +115,6 @@ bot.on('message', (msg) => {
     if (input === "🔍 البحث برقم الهوية أو الاسم") {
         bot.sendMessage(chatId, "📝 أدخل رقم الهوية أو الاسم للبحث:");
 
-        
     } else if (input === "📞 معلومات الاتصال") {
         const contactMessage = `
 📞 **معلومات الاتصال:**
@@ -126,26 +126,30 @@ bot.on('message', (msg) => {
         `;
         bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
 
-    }else if (input === "💱 أسعار العملات") {
-        const currencyUrl = "https://api.exchangerate-api.com/v4/623c6034a8105de8e9768c5b/latest/USD"; // مثال على API لأسعار العملات
+    } else if (input === "💱 أسعار العملات") {
+    try {
+        const currencyUrl = "https://api.exchangerate-api.com/v4/latest/USD";
+        const response = await axios.get(currencyUrl);
+        const rates = response.data.rates;
 
-        try {
-            const response = await axios.get(currencyUrl);
-            const rates = response.data.rates;
-            const usdToIls = rates.ILS || "غير متوفر"; // سعر الدولار مقابل الشيكل
-            const usdToEur = rates.EUR || "غير متوفر"; // سعر الدولار مقابل اليورو
+        // جلب أسعار العملات
+        const usdToIls = rates.ILS || "غير متوفر"; // سعر الدولار مقابل الشيكل
+        const usdToJod = rates.JOD || "غير متوفر"; // سعر الدولار مقابل الدينار الأردني
+        const usdToEgp = rates.EGP || "غير متوفر"; // سعر الدولار مقابل الجنيه المصري
 
-            const currencyMessage = `
+        // رسالة العملات
+        const currencyMessage = `
 💱 **أسعار العملات:**
 - 1 دولار أمريكي = ${usdToIls} شيكل
-- 1 دولار أمريكي = ${usdToEur} يورو
+- 1 دولار أمريكي = ${usdToJod} دينار أردني
+- 1 دولار أمريكي = ${usdToEgp} جنيه مصري
             `;
             bot.sendMessage(chatId, currencyMessage, { parse_mode: 'Markdown' });
         } catch (error) {
             bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب أسعار العملات.");
         }
 
-    }else if (input === "🌤 أحوال الطقس") {
+    } else if (input === "🌤 أحوال الطقس") {
         const city = "غزة"; // يمكنك السماح للمستخدم باختيار مدينة
         const apiKey = "2fb04804fafc0c123fe58778ef5d878b"; // أدخل مفتاح API الخاص بـ OpenWeather
         const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&lang=ar&appid=${apiKey}`;
@@ -165,7 +169,6 @@ bot.on('message', (msg) => {
             bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب معلومات الطقس.");
         }
 
-        
     } else if (input === "📖 معلومات عن البوت") {
         const aboutMessage = `
 🤖 **معلومات عن البوت:**
@@ -178,7 +181,6 @@ bot.on('message', (msg) => {
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
 
-        
     } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
         bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
         bot.once('message', (broadcastMsg) => {
@@ -186,12 +188,14 @@ bot.on('message', (msg) => {
             sendBroadcastMessage(broadcastText, chatId);
         });
 
-        
     } else {
-        const user = data.find((entry) => entry.idNumber === input || entry.name === input);
+        const user = data.find((entry) => 
+            entry.idNumber?.toLowerCase() === input.toLowerCase() || 
+            entry.name?.toLowerCase() === input.toLowerCase()
+        );
 
         if (user) {
-            const response = `
+            const userMessage = `
 🔍 **تفاصيل الطلب:**
 
 👤 **الاسم**: ${user.name}
@@ -206,29 +210,30 @@ bot.on('message', (msg) => {
 📜 **الحالة**: ${user.status}
 📅 **تاريخ تسليم الجرة**: ${user.deliveryDate}
             `;
-            bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
+            bot.sendMessage(chatId, userMessage, { parse_mode: 'Markdown' });
         } else {
-            bot.sendMessage(chatId, "⚠️ لم أتمكن من العثور على بيانات للمدخل المقدم.");
+            bot.sendMessage(chatId, "⚠️ لم يتم العثور على نتائج للبحث الخاص بك.");
         }
     }
 });
 
-// إرسال رسالة جماعية
-async function sendBroadcastMessage(message, adminChatId) {
-    userIds.forEach(userId => {
-        bot.sendMessage(userId, message);
-    });
-    bot.sendMessage(adminChatId, "✅ تم إرسال الرسالة للجميع بنجاح.");
-}
+// دالة لإرسال الرسائل لجميع المستخدمين
+function sendBroadcastMessage(message, adminChatId) {
+    if (userIds.size === 0) {
+        bot.sendMessage(adminChatId, "⚠️ لا توجد معرفات للمستخدمين.");
+        return;
+    }
 
-// إرسال تنبيه للمسؤولين
-function sendMessageToAdmins(message) {
-    adminIds.forEach(adminId => {
-        bot.sendMessage(adminId, message);
+    userIds.forEach((userId) => {
+        bot.sendMessage(userId, message).catch((error) => {
+            console.error(`❌ خطأ أثناء إرسال الرسالة للمستخدم ${userId}:`, error.message);
+        });
     });
+
+    bot.sendMessage(adminChatId, "✅ تم إرسال الرسالة لجميع المستخدمين.");
 }
 
 // تشغيل السيرفر
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`🚀 السيرفر يعمل على المنفذ ${port}`);
 });
