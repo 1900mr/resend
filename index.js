@@ -89,15 +89,15 @@ bot.onText(/\/start/, (msg) => {
         reply_markup: {
             keyboard: [
                 [{ text: "🔍 البحث برقم الهوية أو الاسم" }],
-                [{ text: "🌤 أحوال الطقس" }, { text: "💱 أسعار العملات" }],
                 [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
+                // إضافة الأزرار الجديدة
+                [{ text: "🌤️ أحوال الطقس" }, { text: "💰 أسعار العملات" }],
             ],
             resize_keyboard: true,
             one_time_keyboard: false,
         },
     };
 
-    
     if (adminIds.includes(chatId.toString())) {
         options.reply_markup.keyboard.push([{ text: "📢 إرسال رسالة للجميع" }]);
     }
@@ -105,23 +105,15 @@ bot.onText(/\/start/, (msg) => {
     bot.sendMessage(chatId, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
-
-
 // التعامل مع الضغط على الأزرار والبحث
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
     const input = msg.text.trim(); // مدخل المستخدم
 
-    
     if (input === '/start' || input.startsWith('/')) return; // تجاهل الأوامر الأخرى
 
-
-    
     if (input === "🔍 البحث برقم الهوية أو الاسم") {
         bot.sendMessage(chatId, "📝 أدخل رقم الهوية أو الاسم للبحث:");
-
-
-        
     } else if (input === "📞 معلومات الاتصال") {
         const contactMessage = `
 📞 **معلومات الاتصال:**
@@ -132,9 +124,6 @@ bot.on('message', (msg) => {
 - 💬 تلغرام : [https://t.me/AhmedGarqoud]
         `;
         bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
-
-
-        
     } else if (input === "📖 معلومات عن البوت") {
         const aboutMessage = `
 🤖 **معلومات عن البوت:**
@@ -146,30 +135,13 @@ bot.on('message', (msg) => {
 🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
-
-
-        
-    } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
-        bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
-        bot.once('message', (broadcastMsg) => {
-            const broadcastText = broadcastMsg.text;
-            sendBroadcastMessage(broadcastText, chatId);
-        });
-
-       } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
-        bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
-        bot.once('message', (broadcastMsg) => {
-            const broadcastText = broadcastMsg.text;
-            sendBroadcastMessage(broadcastText, chatId);
-        });
-
-    } else if (input === "🌤 أحوال الطقس") {
+    } else if (input === "🌤️ أحوال الطقس") {
         const city = "غزة"; // يمكنك السماح للمستخدم باختيار مدينة
         const apiKey = "2fb04804fafc0c123fe58778ef5d878b"; // أدخل مفتاح API الخاص بـ OpenWeather
         const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&lang=ar&appid=${apiKey}`;
 
         try {
-            const response = await axios.get(weatherUrl); // تأكد من استخدام await مع axios
+            const response = await axios.get(weatherUrl);
             const weather = response.data;
             const weatherMessage = `
 🌤 **أحوال الطقس في ${city}:**
@@ -181,9 +153,40 @@ bot.on('message', (msg) => {
             bot.sendMessage(chatId, weatherMessage, { parse_mode: 'Markdown' });
         } catch (error) {
             bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب معلومات الطقس.");
+        }
+
 
         
+    } else if (input === "💰 أسعار العملات") {
+        const currencyUrl = "https://api.exchangerate-api.com/v4/623c6034a8105de8e9768c5b/latest/USD";
+        const response = await axios.get(currencyUrl);
+        const rates = response.data.rates;
+
+        // جلب أسعار العملات
+        const usdToIls = rates.ILS || "غير متوفر"; // سعر الدولار مقابل الشيكل
+        const usdToJod = rates.JOD || "غير متوفر"; // سعر الدولار مقابل الدينار الأردني
+        const usdToEgp = rates.EGP || "غير متوفر"; // سعر الدولار مقابل الجنيه المصري
+
+        // رسالة العملات
+        const currencyMessage = `
+💱 **أسعار العملات:**
+- 1 دولار أمريكي = ${usdToIls} شيكل
+- 1 دولار أمريكي = ${usdToJod} دينار أردني
+- 1 دولار أمريكي = ${usdToEgp} جنيه مصري
+            `;
+            bot.sendMessage(chatId, currencyMessage, { parse_mode: 'Markdown' });
+        } catch (error) {
+            bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب أسعار العملات.");
+        {
+
+
         
+    } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
+        bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
+        bot.once('message', (broadcastMsg) => {
+            const broadcastText = broadcastMsg.text;
+            sendBroadcastMessage(broadcastText, chatId);
+        });
     } else {
         const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
