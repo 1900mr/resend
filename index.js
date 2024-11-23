@@ -128,18 +128,23 @@ bot.on('message', async (msg) => {
             bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب معلومات الطقس.");
         }
     } else if (input === "💱 أسعار العملات") {
-        const currencyUrl = "https://api.exchangerate-api.com/v4/623c6034a8105de8e9768c5b/latest/USD"; // مثال على API لأسعار العملات
+    const currencyUrl = "https://api.exchangerate-api.com/v4/623c6034a8105de8e9768c5b/latest/USD"; // مثال على API لأسعار العملات
 
-        try {
-            const response = await axios.get(currencyUrl);
-            const rates = response.data.rates;
-            const usdToIls = rates.ILS || "غير متوفر"; // سعر الدولار مقابل الشيكل
-            const usdToEur = rates.EUR || "غير متوفر"; // سعر الدولار مقابل اليورو
+    try {
+        const response = await axios.get(currencyUrl);
+        const rates = response.data.rates;
 
-            const currencyMessage = `
+        const usdToIls = rates.ILS || "غير متوفر"; // سعر الدولار مقابل الشيكل
+        const usdToEur = rates.EUR || "غير متوفر"; // سعر الدولار مقابل اليورو
+        const usdToJod = rates.JOD || "غير متوفر"; // سعر الدولار مقابل الدينار الأردني
+        const usdToEgp = rates.EGP || "غير متوفر"; // سعر الدولار مقابل الجنيه المصري
+
+        const currencyMessage = `
 💱 **أسعار العملات:**
 - 1 دولار أمريكي = ${usdToIls} شيكل
 - 1 دولار أمريكي = ${usdToEur} يورو
+- 1 دولار أمريكي = ${usdToJod} دينار أردني
+- 1 دولار أمريكي = ${usdToEgp} جنيه مصري
             `;
             bot.sendMessage(chatId, currencyMessage, { parse_mode: 'Markdown' });
         } catch (error) {
