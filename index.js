@@ -126,7 +126,7 @@ bot.on('message', (msg) => {
         `;
         bot.sendMessage(chatId, contactMessage, { parse_mode: 'Markdown' });
 
-        else if (input === "💱 أسعار العملات") {
+    }else if (input === "💱 أسعار العملات") {
         const currencyUrl = "https://api.exchangerate-api.com/v4/623c6034a8105de8e9768c5b/latest/USD"; // مثال على API لأسعار العملات
 
         try {
@@ -145,7 +145,7 @@ bot.on('message', (msg) => {
             bot.sendMessage(chatId, "⚠️ حدث خطأ أثناء جلب أسعار العملات.");
         }
 
-        else if (input === "🌤 أحوال الطقس") {
+    }else if (input === "🌤 أحوال الطقس") {
         const city = "غزة"; // يمكنك السماح للمستخدم باختيار مدينة
         const apiKey = "2fb04804fafc0c123fe58778ef5d878b"; // أدخل مفتاح API الخاص بـ OpenWeather
         const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&lang=ar&appid=${apiKey}`;
