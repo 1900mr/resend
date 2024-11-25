@@ -195,4 +195,7 @@ async function getGroupMembersCount(chatId) {
 // اختبار الحصول على عدد الأعضاء عند بدء تشغيل البوت
 bot.onText(/\/membersCount/, async (msg) => {
     const chatId = msg.chat.id;
-    const memberCount = await getGroupMembersCount(chat
+    const memberCount = await getGroupMembersCount(chatId); // تأكد من إغلاق الأقواس هنا بشكل صحيح
+
+    if (memberCount !== null) {
+        bot.sendMessage(chatId,
