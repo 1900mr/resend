@@ -1,21 +1,17 @@
 const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
+require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
 const express = require('express'); // إضافة Express لتشغيل السيرفر
-const axios = require('axios'); // لإجراء استدعاء API
 
 // إعداد سيرفر Express (لتشغيل التطبيق على Render أو في بيئة محلية)
 const app = express();
-const port = 4000; // المنفذ الافتراضي
+const port = process.env.PORT || 4000; // المنفذ الافتراضي
 app.get('/', (req, res) => {
     res.send('The server is running successfully.');
 });
 
 // استبدل بالتوكن الخاص بك
-const token = '7859625373:AAEFlMbm3Sfagj4S9rx5ixbfqItE1jNpDos';
-
-// API Keys مباشرة في الكود
-const WEATHER_API_KEY = '2fb04804fafc0c123fe58778ef5d878b'; // ضع مفتاح API الخاص بالطقس
-const CURRENCY_API_KEY = '5884bd60fbdb6ea892ed9b76'; // ضع مفتاح API الخاص بالعملات
+const token = process.env.TELEGRAM_BOT_TOKEN || '7859625373:AAEFlMbm3Sfagj4S9rx5ixbfqItE1jNpDos';
 
 // إنشاء البوت
 const bot = new TelegramBot(token, { polling: true });
@@ -84,8 +80,6 @@ loadDataFromExcelFiles(excelFiles);
 // قائمة معرفات المسؤولين
 const adminIds = process.env.ADMIN_IDS?.split(',') || ['7719756994']; // إضافة المعرفات الفعلية للمسؤولين
 
-
-
 // الرد على أوامر البوت
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
@@ -95,9 +89,6 @@ bot.onText(/\/start/, (msg) => {
         reply_markup: {
             keyboard: [
                 [{ text: "🔍 البحث برقم الهوية أو الاسم" }],
-                
-                [{ text: "🌤️ أحوال الطقس" }, { text: "💰 أسعار العملات" }],
-
                 [{ text: "📞 معلومات الاتصال" }, { text: "📖 معلومات عن البوت" }],
             ],
             resize_keyboard: true,
@@ -112,51 +103,8 @@ bot.onText(/\/start/, (msg) => {
     bot.sendMessage(chatId, "مرحبًا بك! اختر أحد الخيارات التالية:", options);
 });
 
-
-// دالة للحصول على حالة الطقس في مدينة غزة فقط
-async function getWeather() {
-    try {
-        const city = "Gaza"; // اسم المدينة ثابت هنا كـ "غزة"
-        const response = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric&lang=ar`);
-        const data = response.data;
-        return `
-🌤️ **حالة الطقس في ${data.name}**:
-- درجة الحرارة: ${data.main.temp}°C
-- حالة السماء: ${data.weather[0].description}
-- الرطوبة: ${data.main.humidity}%
-- الرياح: ${data.wind.speed} متر/ثانية
-        `;
-    } catch (error) {
-        return "❌ لم أتمكن من الحصول على بيانات الطقس في مدينة غزة. يرجى المحاولة لاحقًا.";
-    }
-}
-
-
-// دالة للحصول على أسعار العملات
-async function getCurrencyRates() {
-    try {
-        const response = await axios.get(`https://v6.exchangerate-api.com/v6/${CURRENCY_API_KEY}/latest/USD`);
-        const data = response.data;
-
-        // احصل على أسعار العملات المطلوبة
-        const usdToIls = data.conversion_rates.ILS; // 1 USD إلى شيكل إسرائيلي
-        const ilsToJod = data.conversion_rates.JOD; // 1 ILS إلى دينار أردني
-        const ilsToEgp = data.conversion_rates.EGP; // 1 ILS إلى جنيه مصري
-
-        return `
-💰 **أسعار العملات الحالية**:
-- 1 دولار أمريكي (USD) = ${usdToIls} شيكل إسرائيلي (ILS)
-- 1 شيكل إسرائيلي (ILS) = ${ilsToJod} دينار أردني (JOD)
-- 1 شيكل إسرائيلي (ILS) = ${ilsToEgp} جنيه مصري (EGP)
-        `;
-    } catch (error) {
-        return "❌ لم أتمكن من الحصول على أسعار العملات. يرجى المحاولة لاحقًا.";
-    }
-}
-
-
 // التعامل مع الضغط على الأزرار والبحث
-bot.on('message', async (msg) => {
+bot.on('message', (msg) => {
     const chatId = msg.chat.id;
     const input = msg.text.trim(); // مدخل المستخدم
 
@@ -182,25 +130,15 @@ bot.on('message', async (msg) => {
 - يتم عرض تفاصيل المواطن بما في ذلك بيانات الموزع وحالة الطلب.
 - هدفنا هو تسهيل الوصول إلى البيانات.
 
-🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة [احمد محمد ابو غرقود].
+🔧 **التطوير والصيانة**: تم تطوير هذا البوت بواسطة : [احمد محمد].
         `;
         bot.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' });
-    } else if (input === "🌤️ أحوال الطقس") {
-        bot.sendMessage(chatId, "📡 جاري تحميل حالة الطقس...");
-        const weather = await getWeather("Cairo"); // يمكنك تعديل المدينة هنا أو طلب المدينة من المستخدم
-        bot.sendMessage(chatId, weather);
-    } else if (input === "💰 أسعار العملات") {
-        bot.sendMessage(chatId, "📡 جاري تحميل أسعار العملات...");
-        const rates = await getCurrencyRates();
-        bot.sendMessage(chatId, rates);
     } else if (input === "📢 إرسال رسالة للجميع" && adminIds.includes(chatId.toString())) {
         bot.sendMessage(chatId, "✉️ اكتب الرسالة التي تريد إرسالها لجميع المستخدمين:");
         bot.once('message', (broadcastMsg) => {
             const broadcastText = broadcastMsg.text;
             sendBroadcastMessage(broadcastText, chatId);
         });
-
-
     } else {
         const user = data.find((entry) => entry.idNumber === input || entry.name === input);
 
@@ -218,7 +156,7 @@ bot.on('message', async (msg) => {
 🆔 **هوية الموزع**: ${user.distributorId}
 
 📜 **الحالة**: ${user.status}
-📅 **تاريخ تسليم الجرة**: ${user.deliveryDate}
+📅 **تاريخ صدور الكشف **: ${user.deliveryDate}
             `;
             bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
         } else {
