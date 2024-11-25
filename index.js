@@ -2,6 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const ExcelJS = require('exceljs'); // استيراد مكتبة exceljs
 require('dotenv').config(); // إذا كنت تستخدم متغيرات بيئية
 const express = require('express'); // إضافة Express لتشغيل السيرفر
+const axios = require('axios'); // إضافة مكتبة axios لجلب عدد الأعضاء
 
 // إعداد سيرفر Express (لتشغيل التطبيق على Render أو في بيئة محلية)
 const app = express();
@@ -180,7 +181,18 @@ function sendMessageToAdmins(message) {
     });
 }
 
-// تشغيل السيرفر
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+// إضافة دالة للحصول على عدد الأعضاء في المجموعة
+async function getGroupMembersCount(chatId) {
+    try {
+        const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMembersCount?chat_id=${chatId}`);
+        return response.data.result; // عدد الأعضاء
+    } catch (error) {
+        console.error('❌ حدث خطأ أثناء جلب عدد الأعضاء:', error.message);
+        return null;
+    }
+}
+
+// اختبار الحصول على عدد الأعضاء عند بدء تشغيل البوت
+bot.onText(/\/membersCount/, async (msg) => {
+    const chatId = msg.chat.id;
+    const memberCount = await getGroupMembersCount(chat
